@@ -221,10 +221,22 @@
   .panel .body img{cursor:zoom-in}
   .mbtn{display:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12.5px;color:var(--ink)}
   .mclose{display:none}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+  .toast.on{opacity:1}
+
+  @media (max-width:920px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto auto auto 1fr}
+    aside{border-right:0;border-bottom:1px solid var(--line);max-height:38vh}
+    .grid{grid-template-columns:repeat(3,1fr);gap:8px}
+    .page{padding:12px}
+    .panel .body{grid-template-columns:1fr}
+  }
   @media (max-width:700px){
     .app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr;height:100vh;height:100dvh}
     header{padding:8px 10px;gap:8px}
-    header h1{font-size:15px;width:100%} header h1 small{font-size:10px}
+    .app{grid-template-columns:minmax(0,1fr)} header{min-width:0;max-width:100vw;overflow:hidden}
+    header h1{font-size:15px;width:100%;min-width:0} header h1 small{font-size:10px;white-space:normal}
+    #sort{flex:1;min-width:0;order:4} .mbtn{order:3} .search{order:2}
     .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none} .tabs::-webkit-scrollbar{display:none}
     .tabs button{padding:6px 9px;font-size:12px;white-space:nowrap;flex:none} .tabs button small{font-size:9px}
     .search{flex:1;min-width:0;padding:6px 10px}
@@ -239,23 +251,18 @@
     .mclose{display:block;position:sticky;top:0;background:#fff;padding:4px 0 8px;margin-bottom:6px;border-bottom:1px solid var(--line);z-index:1}
     .mclose button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:6px 10px;font-weight:700}
     main{padding:8px} .pagebar{margin-bottom:6px} .page{padding:8px;border-radius:10px} .page::before{display:none}
-    .grid{grid-template-columns:repeat(2,1fr);gap:8px;padding-left:0}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-left:0}
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{overflow-x:hidden;max-width:100vw}
+    main{overflow-x:hidden} .page{min-width:0;max-width:100%} .slot{min-width:0;max-width:100%}
+    .slot .meta,.slot .row,.pr{min-width:0} .pr{overflow-wrap:anywhere}
+    .rar{min-width:0}
     .slot{padding:5px 5px 6px;gap:4px} .slot .meta{font-size:11px} .rar{font-size:10px} .slot .rv{font-size:10px;padding:1px 6px}
     .qty button{width:24px;height:24px;font-size:14px} .qty .n{min-width:44px;font-size:11px}
     .pr{font-size:10px}
     .panel{width:100%} .panel .body{grid-template-columns:1fr;gap:12px;padding:12px 14px 20px} .panel .head{padding:14px 14px 0} .panel h2{font-size:18px}
     .pgdiv{font-size:11px}
     .topo{right:12px;bottom:12px;padding:8px 12px}
-  }
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
-  .toast.on{opacity:1}
-
-  @media (max-width:920px){
-    .app{grid-template-columns:1fr;grid-template-rows:auto auto auto 1fr}
-    aside{border-right:0;border-bottom:1px solid var(--line);max-height:38vh}
-    .grid{grid-template-columns:repeat(3,1fr);gap:8px}
-    .page{padding:12px}
-    .panel .body{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -267,6 +274,7 @@
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="q" placeholder="Buscar por nome ou número (ex.: Umbreon, 161, promo)" autocomplete="off"></label>
     <button class="mbtn" id="mFiltros" title="Filtros, ordenação, visual">Filtros</button><button class="mbtn" id="mResumo" title="Progresso, valor e faltantes">Resumo</button>
+      <select id="sort"><option value="num">Ordem do set</option><option value="name">Nome A–Z</option><option value="nameDesc">Nome Z–A</option><option value="priceDesc">Valor: maior → menor</option><option value="priceAsc">Valor: menor → maior</option></select>
     <div class="ctl">
       <div class="seg" id="modeSeg"><button data-m="base">Set base</button><button data-m="master" class="on">Master set</button></div>
       <select id="fRar"><option value="">Todas as raridades</option></select>
@@ -275,7 +283,6 @@
       <button id="btnPrecos" class="btnp">Preços</button>
       <button id="btnSalvar" class="btns" title="Gravar a coleção na pasta do OneDrive">Salvar</button><span id="saveState" class="savestate"></span>
       <button id="btnAtualizar" title="Baixar os preços de hoje deste set e acrescentar ao histórico">Atualizar preços</button>
-      <select id="sort"><option value="num">Ordem do set</option><option value="name">Nome A–Z</option><option value="nameDesc">Nome Z–A</option><option value="priceDesc">Valor: maior → menor</option><option value="priceAsc">Valor: menor → maior</option></select>
       <select id="visual" title="Como mostrar o que você tem e o que falta"><option value="verdeouro">Visual: verde com brilho dourado (tenho) / vermelho (falta)</option><option value="dourado">Visual: dourado (tenho) / vermelho (falta)</option></select>
     </div>
   </header>
@@ -312,6 +319,8 @@
 /* ===================== registro de sets ===================== */
 const SET_IDS = ["CRI","PRE","MEG","30C"];                       // ordem das abas
 const SETS = {}; for(const id of SET_IDS){ if(window["SET_"+id]) SETS[id]=window["SET_"+id]; }
+const dataLanc = s => { const m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(s.lancamento||""); return m? new Date(+m[3],+m[2]-1,+m[1]) : new Date(2100,0,1); };
+SET_IDS.sort((a,b)=> (SETS[a]&&SETS[b]) ? dataLanc(SETS[a])-dataLanc(SETS[b]) : 0);   // abas em ordem de lançamento
 if(window.HISTORICO && !window.HISTORICO_CRI) window.HISTORICO_CRI=window.HISTORICO;   // compatibilidade com o arquivo antigo
 const CARTINHA_PROMO = {CRI:"mep", PRE:"svp", MEG:"mep"};
 const EXEMPLOS = {CRI:{C:1,U:9,R:10,RR:22,UR:100,IR:95,SIR:116,MAR:122,PROMO:1078}};    // carta de exemplo por raridade (recorte do guia)
@@ -545,7 +554,7 @@ let mode=(state.mode==="base"?"base":"master"), page=0, filtered=[];
 const $ = s=>document.querySelector(s);
 const q=$("#q"), fRar=$("#fRar"), fStat=$("#fStat"), sort=$("#sort"), pMin=$("#pMin"), pMax=$("#pMax");
 function renderTabs(){ $("#setSeg").innerHTML=SET_IDS.filter(id=>SETS[id]).map(id=>{ const s=SETS[id]; const st=state.sets[id]||{owned:{}}; const n=Object.keys(st.owned||{}).length;
-  return `<button data-s="${id}" class="${id===setId?"on":""}">${s.nome}<small>${s.codigo} · ${n} marcadas</small></button>`; }).join(""); }
+  return `<button data-s="${id}" class="${id===setId?"on":""}">${s.nome}<small>${s.codigo} · ${(s.lancamento||"").slice(3)} · ${n} marcadas</small></button>`; }).join(""); }
 function fillRar(){ const keep=fRar.value; fRar.innerHTML='<option value="">Todas as raridades</option>'; for(const k of Object.keys(RAR)){ if(!CARDS.some(c=>c.r===k)) continue; const o=document.createElement("option"); o.value=k; o.textContent=RAR[k].nome; fRar.appendChild(o); } fRar.value = [...fRar.options].some(o=>o.value===keep)? keep : ""; }
 function switchSet(id){ if(!SETS[id]||id===setId) return; loadSet(id); state.setAtual=id; save(); fillRar(); renderTabs(); page=0; closePanel(); render(); document.querySelector("main").scrollTo({top:0}); toast("Fichário: "+SET.nome); }
 $("#setSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) switchSet(b.dataset.s); });
@@ -822,7 +831,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-03c";
+const APP_VERSION="2026-10-03e";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
