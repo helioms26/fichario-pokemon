@@ -274,7 +274,7 @@
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="q" placeholder="Buscar por nome ou número (ex.: Umbreon, 161, promo)" autocomplete="off"></label>
     <button class="mbtn" id="mFiltros" title="Filtros, ordenação, visual">Filtros</button><button class="mbtn" id="mResumo" title="Progresso, valor e faltantes">Resumo</button>
-      <select id="sort"><option value="num">Ordem do set</option><option value="name">Nome A–Z</option><option value="nameDesc">Nome Z–A</option><option value="priceDesc">Valor: maior → menor</option><option value="priceAsc">Valor: menor → maior</option></select>
+      <select id="sort" title="Ordenação"><option value="num">Numeração do Card [0-9]</option><option value="numDesc">Numeração do Card [9-0]</option><option value="name">Nome Português [A-Z]</option><option value="nameDesc">Nome Português [Z-A]</option><option value="priceAsc">Menor Preço [0-9]</option><option value="priceDesc">Menor Preço [9-0]</option><option value="maxAsc">Maior Preço [0-9]</option><option value="maxDesc">Maior Preço [9-0]</option></select>
     <div class="ctl">
       <div class="seg" id="modeSeg"><button data-m="base">Set base</button><button data-m="master" class="on">Master set</button></div>
       <select id="fRar"><option value="">Todas as raridades</option></select>
@@ -586,9 +586,12 @@ function applyFilters(){
     num:(a,b)=>a.n-b.n || vo[a.v]-vo[b.v],
     name:(a,b)=>a.nome.localeCompare(b.nome,"pt-BR")||a.n-b.n||vo[a.v]-vo[b.v],
     nameDesc:(a,b)=>b.nome.localeCompare(a.nome,"pt-BR")||a.n-b.n||vo[a.v]-vo[b.v],
+    numDesc:(a,b)=>b.n-a.n||vo[a.v]-vo[b.v],
     priceDesc:(a,b)=>(b.preco??-1)-(a.preco??-1)||a.n-b.n,
-    priceAsc:(a,b)=>(a.preco??1e9)-(b.preco??1e9)||a.n-b.n
-  }[sort.value];
+    priceAsc:(a,b)=>(a.preco??1e9)-(b.preco??1e9)||a.n-b.n,
+    maxDesc:(a,b)=>(precoMax(b)??-1)-(precoMax(a)??-1)||a.n-b.n,
+    maxAsc:(a,b)=>(precoMax(a)??1e9)-(precoMax(b)??1e9)||a.n-b.n
+  }[sort.value] || ((a,b)=>a.n-b.n);
   list.sort(cmp);
   return list;
 }
@@ -596,6 +599,7 @@ function applyFilters(){
 /* ===================== UI: álbum ===================== */
 function render(){ filtered=applyFilters(); renderGrid(); renderDash(); }
 function badge(s){ if(s.promo) return '<span class="rv promo">Promo</span>'; if(s.v==="RV") return '<span class="rv">Reverse foil</span>'; if(s.v==="PB") return '<span class="rv pb">Poké Ball</span>'; if(s.v==="MB") return '<span class="rv mb">Master Ball</span>'; return ""; }
+function precoMax(s){ if(s.v!=="N" && s.v!=="H") return null; const hc = H && H.cartas[pad3(s.n)]; if(!hc||!hc.max) return null; const ds=Object.keys(hc.serie).sort(); const d=ds[ds.length-1]; const v=hc.max[d]; return v==null? null : +v; }
 function priceLine(s){
   if(s.v!=="N" && s.v!=="H") return `<div class="pr"><span class="dt">preço: ver versão normal</span></div>`;
   const hc = H && H.cartas[pad3(s.n)];
@@ -831,7 +835,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-03e";
+const APP_VERSION="2026-10-03f";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
