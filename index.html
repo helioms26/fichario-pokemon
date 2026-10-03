@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c2440">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fichário">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Meu Fichário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --binder:#1c2440; --binder-deep:#141a30; --pocket:#0f1427; --pocket-edge:#2b3560;
+    --paper:#f6f3ec; --ink:#1d2033; --ink-soft:#5a5f78; --line:#d9d4c7;
+    --energy:#ffcc2a; --energy-deep:#e0a800; --ok:#3ec27a; --miss:#7c8298;
+    --shadow:0 8px 24px rgba(8,12,30,.45);
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Nunito,"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.45}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  a{color:inherit}
+
+  /* ---------- layout ---------- */
+  .app{display:grid;grid-template-columns:300px 1fr;grid-template-rows:auto auto 1fr;height:100vh}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-.01em}
+  header h1 small{display:block;font-size:12px;font-weight:600;color:var(--ink-soft)}
+  .search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+  .search input{border:0;background:transparent;flex:1;outline:0;min-width:0}
+  .search svg{width:16px;height:16px;fill:none;stroke:var(--ink-soft);stroke-width:2}
+  .ctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ctl select,.ctl button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;color:var(--ink)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:#fff;padding:7px 12px}
+  .seg button.on{background:var(--ink);color:#fff}
+  .tabs{border-color:var(--energy-deep)}
+  .tabs button{font-weight:800;padding:8px 14px}
+  .tabs button.on{background:var(--energy);color:var(--ink)}
+  .tabs button small{display:block;font-size:10px;font-weight:600;color:var(--ink-soft);line-height:1.1}
+  .tabs button.on small{color:#6b5300}
+  .range{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--ink-soft)}
+  .range input{width:64px;border:1px solid var(--line);border-radius:8px;padding:6px 6px;background:#fff;color:var(--ink)}
+  .btnp{background:var(--energy)!important;border-color:var(--energy-deep)!important;font-weight:800}
+  .btnp:hover{background:#ffd75a!important}
+  .btns{background:#1f6b3f!important;color:#fff!important;border-color:#1f6b3f!important;font-weight:800}
+  .btns.dirty{background:#c0392b!important;border-color:#c0392b!important}
+  .btns:hover{filter:brightness(1.1)}
+  .savestate{font-size:12px;color:var(--ink-soft);min-width:120px}
+  .savestate.dirty{color:#c0392b;font-weight:700}
+  .ctl button:focus-visible,.seg button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--energy-deep);outline-offset:1px}
+
+  .syncbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 20px;background:#fbfaf6;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-soft)}
+  .syncbar b{color:var(--ink)}
+  .syncbar .ok{color:#1f6b3f;font-weight:700}.syncbar .warn{color:#7a5a00;font-weight:700}.syncbar .bad{color:#8b1f1f;font-weight:700}
+  .syncbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-size:12.5px;color:var(--ink)}
+  .syncbar .sep{color:#c9c4b6}
+  .app{grid-template-rows:auto auto 1fr}
+  @media (max-width:920px){.app{grid-template-rows:auto auto auto 1fr}}
+  aside{background:#fff;border-right:1px solid var(--line);padding:18px;overflow:auto}
+  aside h2{font-size:13px;margin:18px 0 8px;color:var(--ink-soft);font-weight:700}
+  aside h2:first-child{margin-top:0}
+  .ring{display:flex;align-items:center;gap:14px}
+  .ring svg{width:92px;height:92px;flex:none}
+  .ring .big{font-size:30px;font-weight:800;line-height:1}
+  .ring .big small{font-size:14px;color:var(--ink-soft);font-weight:600}
+  .ring p{margin:4px 0 0;color:var(--ink-soft);font-size:13px}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}
+  .kv b{font-weight:700}
+  .bars{display:grid;gap:6px}
+  .bar{font-size:12.5px;cursor:pointer;border-radius:6px;padding:3px 4px;margin:0 -4px}
+  .bar:hover{background:var(--paper)}
+  .bar.sel{background:#fff4c9;outline:1px solid var(--energy-deep)}
+  .bar .t{display:flex;justify-content:space-between;margin-bottom:2px}
+  .bar .t span:first-child{display:inline-flex;align-items:center}
+  .bar .l{height:6px;background:#ece8de;border-radius:3px;overflow:hidden}
+  .bar .l i{display:block;height:100%;background:var(--energy-deep)}
+  .missing{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+  .missing li{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 8px;border-radius:6px;cursor:pointer}
+  .missing li:hover{background:var(--paper)}
+  .missing li .n{color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#eee;color:#333;white-space:nowrap}
+  .d1{background:#dff5e7;color:#1f6b3f}.d2{background:#fff1c7;color:#7a5a00}.d3{background:#ffe1d0;color:#8a3d0f}.d4{background:#f6d6d6;color:#8b1f1f}
+  .actions{display:grid;gap:6px;margin-top:8px}
+  .actions button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px;text-align:left}
+  .actions button:hover{background:var(--paper)}
+  .hlink{cursor:pointer}
+  .hlink:hover{color:var(--ink)}
+  .hlink .hint{font-weight:600;color:#2b4bb4;font-size:11px;margin-left:6px}
+  .ric{display:inline-flex;align-items:center;gap:2px;vertical-align:middle;margin-right:6px}
+  .ric svg{width:14px;height:14px;display:block}
+
+  /* ---------- binder ---------- */
+  main{overflow:auto;padding:22px;background:
+      radial-gradient(1200px 400px at 50% -200px, #2a3560 0%, transparent 60%),
+      var(--binder-deep)}
+  .pagebar{display:flex;align-items:center;justify-content:flex-end;max-width:860px;margin:0 auto 10px;color:#cfd5ee;font-weight:700}
+  .pagebar .cnt{font-weight:600;color:#9aa4d0;font-size:13px}
+  .page{margin:0 auto;max-width:860px;background:linear-gradient(160deg,#243052,#1a2340 60%,#172038);border-radius:14px;padding:22px;box-shadow:var(--shadow);position:relative}
+  .page::before{content:"";position:absolute;left:0;top:26px;bottom:26px;width:10px;background:repeating-linear-gradient(to bottom,#0c1022 0 34px,transparent 34px 60px);border-radius:6px 0 0 6px;opacity:.7}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding-left:10px}
+  .slot{background:var(--pocket);border:1px solid var(--pocket-edge);border-radius:var(--r);padding:8px 8px 10px;box-shadow:inset 0 2px 10px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:6px;position:relative}
+  .slot .img{aspect-ratio:350/489;border-radius:7px;overflow:hidden;background:#0a0e1d;cursor:pointer;position:relative}
+  .slot img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s,opacity .2s}
+  .vis-dourado .slot{border-width:3px}
+  .vis-dourado .slot:not(.miss){border-color:#ffcc2a;box-shadow:0 0 0 1px #ffe58a,0 0 18px 2px rgba(255,204,42,.6),inset 0 2px 10px rgba(0,0,0,.6)}
+  .vis-dourado .slot.miss{border-color:#d9534f;box-shadow:0 0 0 1px #d9534f,inset 0 2px 10px rgba(0,0,0,.6)}
+  .vis-dourado .slot.miss .img::after{background:#c0392b!important;color:#fff!important}
+  .vis-dourado .slot.miss img{opacity:.42}
+  .vis-verdeouro .slot{border-width:3px}
+  .vis-verdeouro .slot:not(.miss){border-color:#3ec27a;box-shadow:0 0 0 1px #3ec27a,0 0 20px 4px rgba(255,204,42,.65),inset 0 2px 10px rgba(0,0,0,.6)}
+  .vis-verdeouro .slot.miss{border-color:#d9534f;box-shadow:0 0 0 1px #d9534f,inset 0 2px 10px rgba(0,0,0,.6)}
+  .vis-verdeouro .slot.miss .img::after{background:#c0392b!important;color:#fff!important}
+  .vis-verdeouro .slot.miss img{opacity:.42}
+  .slot.miss .img::after{content:"falta";position:absolute;right:8px;top:8px;background:rgba(0,0,0,.65);color:#e5e8f5;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .slot .rv{position:absolute;left:8px;top:8px;background:linear-gradient(90deg,#6fd6ff,#c99cff,#ffd36f);color:#101425;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;z-index:1}
+  .slot .rv.pb{background:linear-gradient(90deg,#ff6b6b,#ffffff 55%,#ff6b6b)}
+  .slot .rv.mb{background:linear-gradient(90deg,#8e5cff,#ff5cd6)}
+  .slot .rv.promo{background:linear-gradient(90deg,#ffd36f,#ff9e6f)}
+  .slot .meta{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#dfe3f5;font-size:12.5px}
+  .slot .meta .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .meta .no{color:#8d97c4;font-variant-numeric:tabular-nums;flex:none}
+  .slot .row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .rar{font-size:11px;color:#b9c1e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pr{font-size:11px;color:#c9d0ee;line-height:1.35;font-variant-numeric:tabular-nums}
+  .pr b{color:#ffd75a;font-weight:800}
+  .pr .dt{color:#8d97c4}
+  .pr .up{color:#5fd38f}.pr .dn{color:#ff8a8a}
+  .have{display:inline-flex;align-items:center;gap:6px;background:#161c33;border:1px solid #2f3a66;color:#dfe3f5;border-radius:999px;padding:4px 10px 4px 6px;font-size:12.5px;font-weight:700;user-select:none;flex:none}
+  .have input{appearance:none;width:16px;height:16px;border-radius:5px;border:2px solid #56609a;background:transparent;margin:0;display:grid;place-items:center;cursor:pointer}
+  .have input:checked{background:var(--energy);border-color:var(--energy)}
+  .have input:checked::after{content:"";width:9px;height:5px;border-left:2.5px solid #1c2440;border-bottom:2.5px solid #1c2440;transform:rotate(-45deg) translateY(-1px)}
+  .have.on{background:#2b2f1a;border-color:#6d6220}
+  .qty{display:inline-flex;align-items:center;gap:0;background:#161c33;border:1px solid #2f3a66;border-radius:999px;overflow:hidden;flex:none}
+  .qty button{border:0;background:transparent;color:#dfe3f5;width:26px;height:26px;font-weight:800;font-size:15px;line-height:1;padding:0}
+  .qty button:hover{background:#26305a}
+  .qty .n{min-width:54px;text-align:center;font-size:12.5px;font-weight:800;color:#dfe3f5;padding:0 4px}
+  .qty.on{background:#2b2f1a;border-color:#6d6220}
+  .qty.on .n{color:#ffd75a}
+  .ver .qty{background:var(--paper);border-color:var(--line)} .ver .qty button{color:var(--ink)} .ver .qty .n{color:var(--ink)} .ver .qty.on{background:#fff4c9;border-color:var(--energy-deep)}
+  .pgdiv{grid-column:1/-1;color:#8d97c4;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:10px 4px 0;border-top:1px dashed #2b3560;margin-top:6px}
+  .pgdiv:first-child{border-top:0;margin-top:0;padding-top:0}
+  .topo{position:fixed;right:22px;bottom:22px;background:var(--energy);color:#1c2440;border:0;border-radius:999px;padding:10px 16px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+  .topo.show{opacity:1;pointer-events:auto}
+  .noresult{color:#cfd5ee;text-align:center;padding:60px 20px}
+
+  /* ---------- panels ---------- */
+  .veil{position:fixed;inset:0;background:rgba(10,13,28,.55);display:none;z-index:9}
+  .veil.open{display:block}
+  .panel{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:10;transform:translateX(100%);transition:transform .22s;overflow:auto;box-shadow:-10px 0 40px rgba(0,0,0,.35)}
+  .panel.open{transform:none}
+  @media (prefers-reduced-motion:reduce){.panel{transition:none}}
+  .panel .head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:18px 20px 0}
+  .panel h2{margin:0;font-size:22px;font-weight:800;line-height:1.15}
+  .panel h2 small{display:block;font-size:13px;color:var(--ink-soft);font-weight:600}
+  .panel .x{border:0;background:var(--paper);width:34px;height:34px;border-radius:50%;font-size:18px}
+  .panel .body{display:grid;grid-template-columns:200px 1fr;gap:18px;padding:16px 20px 24px}
+  .panel .body img{width:100%;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .facts{display:grid;gap:10px;font-size:14px}
+  .facts .f{display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+  .facts .f b{color:var(--ink-soft);font-weight:700}
+  .vers{display:grid;gap:8px}
+  .ver{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .ver .have{background:var(--paper);border-color:var(--line);color:var(--ink)}
+  .ver .have input{border-color:#aaa}
+  .ver .have.on{background:#fff4c9;border-color:var(--energy-deep)}
+  .explain{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px;display:grid;gap:12px;font-size:14px}
+  .explain h3{margin:0 0 4px;font-size:14px}
+  .sym{font-family:"Segoe UI Symbol",Nunito,sans-serif;font-size:16px}
+  .tip{background:var(--paper);border-radius:8px;padding:10px 12px}
+  .price{font-size:20px;font-weight:800}
+  .price small{font-size:12px;color:var(--ink-soft);font-weight:600}
+  .links{display:grid;gap:4px;margin-top:8px}
+  .lk{display:inline-block;font-size:13px;color:#2b4bb4;text-decoration:none;border:1px solid #c9d2f0;border-radius:8px;padding:6px 10px;text-align:center}
+  .lk:hover{background:#eef2ff}
+  textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;min-height:60px;resize:vertical}
+  .chart{width:100%;height:auto;display:block}
+  .chart .ax{font-size:10px;fill:#7b809a}
+  .chart .ln{fill:none;stroke:#e0a800;stroke-width:2;stroke-linejoin:round}
+  .chart .ar{fill:url(#gA)}
+  .chart .dot{fill:#e0a800}
+  .chart .lnB{fill:none;stroke:#2b4bb4;stroke-width:2;stroke-linejoin:round}
+  .pan{padding:0 20px 24px;display:grid;gap:16px}
+  .pan .seg{margin-top:12px}
+  .stat{display:flex;gap:18px;flex-wrap:wrap}
+  .stat div{font-size:13px;color:var(--ink-soft)}
+  .stat b{display:block;font-size:20px;color:var(--ink)}
+  .up{color:#1f6b3f}.dn{color:#8b1f1f}
+  .mv{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .mv li{display:grid;grid-template-columns:52px 1fr auto auto;gap:10px;align-items:center;font-size:13px;padding:6px 8px;border-radius:6px;cursor:pointer}
+  .mv li:hover{background:var(--paper)}
+  .mv .n{color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .mv .p{font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+  .mv .v{font-weight:800;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.two{grid-template-columns:1fr}}
+  .card-var{display:flex;gap:14px;font-size:13px;color:var(--ink-soft);margin-top:6px}
+  .card-var b{font-weight:800}
+  .crop{width:260px;border-radius:8px;border:1px solid var(--line);background-repeat:no-repeat;background-color:#111;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+  .guia{display:grid;gap:14px}
+  .gi{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .gi h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .gi h3 .ric svg{width:20px;height:20px}
+  .gi p{margin:4px 0 0;font-size:13.5px}
+  .gi small{color:var(--ink-soft);font-size:12px}
+  @media (max-width:640px){.gi{grid-template-columns:1fr}}
+
+  .zoom{position:fixed;inset:0;background:rgba(8,10,22,.92);display:none;z-index:30;overflow:auto;cursor:zoom-out}
+  .zoom.open{display:flex;align-items:center;justify-content:center;flex-direction:column}
+  .zoom img{max-width:94vw;max-height:86vh;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);cursor:zoom-in}
+  .zoom.big{display:block;text-align:center;padding:24px}
+  .zoom.big img{max-width:none;max-height:none;height:170vh;cursor:zoom-out}
+  .zoom .zcap{color:#cfd5ee;font-weight:700;margin-top:10px;font-size:13px;text-align:center}
+  .zoom.big .zcap{display:none}
+  .panel .body img{cursor:zoom-in}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+  .toast.on{opacity:1}
+
+  @media (max-width:920px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto auto auto 1fr}
+    aside{border-right:0;border-bottom:1px solid var(--line);max-height:38vh}
+    .grid{grid-template-columns:repeat(3,1fr);gap:8px}
+    .page{padding:12px}
+    .panel .body{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Meu Fichário <small id="setTitle"></small></h1>
+    <div class="seg tabs" id="setSeg"></div>
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="q" placeholder="Buscar por nome ou número (ex.: Umbreon, 161, promo)" autocomplete="off"></label>
+    <div class="ctl">
+      <div class="seg" id="modeSeg"><button data-m="base">Set base</button><button data-m="master" class="on">Master set</button></div>
+      <select id="fRar"><option value="">Todas as raridades</option></select>
+      <select id="fStat"><option value="">Tenho e faltam</option><option value="have">Só as que tenho</option><option value="miss">Só as que faltam</option><option value="dup">Só repetidas (2+)</option></select>
+      <span class="range" title="Filtrar pelo valor da versão normal (R$)">R$ <input id="pMin" type="number" min="0" step="0.5" placeholder="mín"> a <input id="pMax" type="number" min="0" step="0.5" placeholder="máx"></span>
+      <button id="btnPrecos" class="btnp">Preços</button>
+      <button id="btnSalvar" class="btns" title="Gravar a coleção na pasta do OneDrive">Salvar</button><span id="saveState" class="savestate"></span>
+      <button id="btnAtualizar" title="Baixar os preços de hoje deste set e acrescentar ao histórico">Atualizar preços</button>
+      <select id="sort"><option value="num">Ordem do set</option><option value="name">Nome A–Z</option><option value="nameDesc">Nome Z–A</option><option value="priceDesc">Valor: maior → menor</option><option value="priceAsc">Valor: menor → maior</option></select>
+      <select id="visual" title="Como mostrar o que você tem e o que falta"><option value="verdeouro">Visual: verde com brilho dourado (tenho) / vermelho (falta)</option><option value="dourado">Visual: dourado (tenho) / vermelho (falta)</option></select>
+    </div>
+  </header>
+
+  <div class="syncbar" id="syncbar"></div>
+
+  <aside id="dash"></aside>
+
+  <main>
+    <div class="pagebar"><span class="cnt" id="cnt"></span></div>
+    <div class="page"><div class="grid" id="grid"></div></div>
+    <button id="topo" class="topo" title="Voltar ao topo">↑ Topo</button>
+  </main>
+</div>
+
+<div class="veil" id="veil"></div>
+<section class="panel" id="panel" aria-label="Detalhe da carta"></section>
+<div class="zoom" id="zoom"><img alt=""><div class="zcap"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<!-- sets: um arquivo de dados + um de histórico de preços por set -->
+<script src="data/caos-ascendente.js"></script>
+<script src="data/evolucoes-prismaticas.js"></script>
+<script src="data/megaevolucao.js"></script>
+<script src="data/celebracao-30-anos.js"></script>
+<script src="data/imagens-30C.js"></script>
+<script src="data/historico-precos.js"></script>
+<script src="data/historico-precos-PRE.js"></script>
+<script src="data/historico-precos-MEG.js"></script>
+<script src="data/historico-precos-30C.js"></script>
+<script src="data/colecao.js"></script>
+<script>
+/* ===================== registro de sets ===================== */
+const SET_IDS = ["CRI","PRE","MEG","30C"];                       // ordem das abas
+const SETS = {}; for(const id of SET_IDS){ if(window["SET_"+id]) SETS[id]=window["SET_"+id]; }
+if(window.HISTORICO && !window.HISTORICO_CRI) window.HISTORICO_CRI=window.HISTORICO;   // compatibilidade com o arquivo antigo
+const CARTINHA_PROMO = {CRI:"mep", PRE:"svp", MEG:"mep"};
+const EXEMPLOS = {CRI:{C:1,U:9,R:10,RR:22,UR:100,IR:95,SIR:116,MAR:122,PROMO:1078}};    // carta de exemplo por raridade (recorte do guia)
+
+/* ===================== dicionários ===================== */
+const RAR = {
+  C:  {nome:"Comum",       simbolo:"●",   cor:"#c9cfe8", versoes:["N","RV"], dif:[1,2],
+       expl:"Círculo preto no canto inferior. É a carta mais fácil de sair — vem várias por pacote. A versão reverse foil (moldura brilhante) é a mesma carta, mesmo símbolo, com o brilho fora da arte."},
+  U:  {nome:"Incomum",     simbolo:"◆",   cor:"#c9cfe8", versoes:["N","RV"], dif:[1,2],
+       expl:"Losango preto no canto inferior. Um pouco mais escassa que a comum, mas ainda sai em quase todo pacote."},
+  R:  {nome:"Rara",        simbolo:"★",   cor:"#c9cfe8", versoes:["H","RV"], dif:[1,2],
+       expl:"Estrela preta. Toda rara já vem holográfica (brilha a arte). A versão reverse foil brilha o resto da carta, e não a arte — é a mesma numeração."},
+  RR: {nome:"Rara Dupla (ex)", simbolo:"★★", cor:"#e5e8f5", versoes:["H"], dif:[2],
+       expl:"Duas estrelas pretas. São os Pokémon ex com moldura tradicional. Só existe em holo, sem reverse."},
+  ACE:{nome:"ACE SPEC", simbolo:"★★", cor:"#ff7ad9", versoes:["H"], dif:[3],
+       expl:"Duas estrelas cor-de-rosa (magenta) e moldura rosa. Carta de Treinador ou Energia poderosa: só pode haver uma ACE SPEC no baralho. Só holo."},
+  UR: {nome:"Rara Ultra (full art)", simbolo:"★★", cor:"#d7dcf4", versoes:["H"], dif:[3],
+       expl:"Duas estrelas prateadas. Arte ocupa a carta inteira (full art). Numeração acima do total do set (secreta). Só holo."},
+  IR: {nome:"Ilustração Rara", simbolo:"★", cor:"#ffd86b", versoes:["H"], dif:[3],
+       expl:"Uma estrela dourada. Arte de cena, com o Pokémon no ambiente. Numeração acima do total do set (secreta). Só holo. É a raridade favorita de colecionador de arte."},
+  SIR:{nome:"Ilustração Rara Especial", simbolo:"★★", cor:"#ffd86b", versoes:["H"], dif:[4],
+       expl:"Duas estrelas douradas. Arte especial de página inteira, geralmente com textura. As cartas mais cobiçadas do set. Só holo."},
+  HR: {nome:"Hiper Rara (dourada)", simbolo:"★★★", cor:"#ffd86b", versoes:["H"], dif:[4],
+       expl:"Três estrelas douradas e carta inteira dourada. Versão dourada de Pokémon ex ou de Treinador/Energia. Só holo."},
+  PK: {nome:"Pikachu dos 30 artistas", simbolo:"★", cor:"#ffd86b", versoes:["H"], dif:[2],
+       expl:"As 30 cartas de Pikachu (023 a 052), cada uma por um ilustrador diferente. Uma sai em todo booster. Símbolo de raridade próprio do set comemorativo; todas foil."},
+  FR: {nome:"Rara Futurista", simbolo:"★★", cor:"#8fd3ff", versoes:["H"], dif:[4],
+       expl:"Raridade nova, exclusiva dos 30 anos: Mewtwo ex 157 e Mew ex 158, arte de YOSHIROTTEN. São as chase do set. Só holo."},
+  CC: {nome:"Coleção Clássica", simbolo:"◆", cor:"#e5e8f5", versoes:["H"], dif:[3],
+       expl:"Reimpressão de uma carta histórica com a numeração original e o selo dos 30 anos. Vem em um pacote próprio (Classic Collection), não nos boosters comuns. Todas foil."},
+  EN: {nome:"Energia Básica foil", simbolo:"●", cor:"#c9cfe8", versoes:["H"], dif:[1],
+       expl:"Energias Básicas com arte própria dos 30 anos, foil, uma por booster. Numeração da série MEE."},
+  PROMO:{nome:"Promo (estrela preta)", simbolo:"★", cor:"#e5e8f5", versoes:["H"], dif:[2],
+       expl:"Carta promocional: no lugar do símbolo de raridade vem uma estrela preta com a palavra PROMO, e a numeração é da série de promos, não do set. Sai lacrada em produtos específicos (blister, box, coleção), nunca em booster. É holográfica."},
+  MAR:{nome:"Mega Attack Rare (dourada)", simbolo:"★★★", cor:"#ffd86b", versoes:["H"], dif:[4],
+       expl:"Carta dourada exclusiva do Mega ex mascote do set — uma só por set. A nomenclatura oficial desta raridade no bloco Megaevolução varia conforme a fonte (Mega Attack Rare / Hyper Rara); confira o símbolo impresso na própria carta."}
+};
+const VER = {N:"Normal", H:"Holo", RV:"Reverse foil", PB:"Padrão Poké Ball", MB:"Padrão Master Ball"};
+const VER_DIF = {RV:1, PB:2, MB:3};   // acréscimo de dificuldade por versão
+const DIF = {1:"Fácil",2:"Média",3:"Difícil",4:"Muito difícil"};
+const RAR_LEGENDA = {C:"círculo preto", U:"losango preto", R:"estrela preta", RR:"duas estrelas pretas", ACE:"duas estrelas rosa (magenta)", UR:"duas estrelas prateadas", IR:"uma estrela dourada", SIR:"duas estrelas douradas", HR:"três estrelas douradas", PK:"estrela do set comemorativo", FR:"símbolo próprio (Futurista)", CC:"símbolo da carta original + selo 30", EN:"energia foil", MAR:"três estrelas douradas (confira na carta)", PROMO:"estrela preta + PROMO"};
+function rarIcon(k){
+  const star=(c)=>`<svg viewBox="0 0 24 24"><path fill="${c}" d="M12 2.5l2.9 6.2 6.8.8-5 4.7 1.3 6.8L12 17.7 5.9 21l1.3-6.8-5-4.7 6.8-.8z"/></svg>`;
+  const gold="#c9a227", silver="#9aa3ad", black="#111", pink="#e0409c";
+  const m={C:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${black}"/></svg>`,
+    U:`<svg viewBox="0 0 24 24"><path fill="${black}" d="M12 3l9 9-9 9-9-9z"/></svg>`,
+    R:star(black), RR:star(black)+star(black), ACE:star(pink)+star(pink), UR:star(silver)+star(silver), IR:star(gold), SIR:star(gold)+star(gold), HR:star(gold)+star(gold)+star(gold), MAR:star(gold)+star(gold)+star(gold),
+    PK:star(gold), FR:star("#3aa7ff")+star("#3aa7ff"), CC:`<svg viewBox="0 0 24 24"><path fill="${black}" d="M12 3l9 9-9 9-9-9z"/></svg><span style="font-size:10px;font-weight:800">30</span>`, EN:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${black}"/></svg>`,
+    PROMO:star(black)+`<span style="font-size:10px;font-weight:800;letter-spacing:.04em">PROMO</span>`};
+  return `<span class="ric" title="${RAR_LEGENDA[k]}">${m[k]}</span>`;
+}
+// recorte do canto inferior esquerdo (número + símbolo). Frações da imagem 350x489 — ajuste aqui se sair deslocado.
+const CROP={x:0.03, y:0.925, w:0.30, h:0.065};
+function rarCrop(c){ const W=260, scale=W/(CROP.w*350); const bw=350*scale, bh=489*scale, hh=Math.round(CROP.h*bh);
+  return `<div class="crop" title="Canto inferior esquerdo de ${c.nome} ${c.num}" style="height:${hh}px;background-image:url('${imgLocal(c)}'),url('${imgRemote(c)}');background-size:${bw.toFixed(0)}px ${bh.toFixed(0)}px;background-position:-${(CROP.x*bw).toFixed(0)}px -${(CROP.y*bh).toFixed(0)}px"></div>`; }
+
+function protecao(r, v, preco){
+  if(r==="MAR"||r==="HR"||r==="SIR"||(preco||0)>=150) return {n:"Sleeve dupla + toploader (ou Card Saver), fora do fichário", t:"Carta de alto valor. Penny sleeve virada + sleeve de deck por cima, depois toploader ou Card Saver. Guarde à parte, longe de sol e umidade. Candidata a grading se estiver impecável."};
+  if(r==="FR") return {n:"Sleeve dupla + toploader (ou Card Saver), fora do fichário", t:"Rara Futurista: chase do set, alto valor. Trate como dourada."};
+  if(r==="IR"||r==="UR"||r==="ACE"||r==="CC") return {n:"Sleeve + folha do fichário (toploader só para envio)", t:"Vale mais que uma comum, mas não a ponto de sair do fichário. Sleeve simples dentro da folha resolve. Se for enviar pelo correio, aí sim sleeve + toploader."};
+  if(r==="PROMO") return {n:"Sleeve + folha do fichário", t:"Promo de blister/box: baixo valor, mas é a única forma de conseguir a carta — cuide bem. Sleeve simples na folha resolve."};
+  if(r==="RR") return {n:"Sleeve + folha do fichário", t:"Pokémon ex de moldura tradicional: sleeve simples na folha. Toploader não é necessário."};
+  if(v==="PB"||v==="MB") return {n:"Sleeve + folha do fichário", t:"Padrão Poké Ball / Master Ball: mais escasso que a reverse comum e valorizado por colecionador. Sleeve simples na folha; as Master Ball de Pokémon populares merecem toploader."};
+  if(v==="RV") return {n:"Sleeve + folha do fichário", t:"Reverse foil arranha com facilidade por causa do brilho na moldura. Sleeve simples antes de colocar na folha."};
+  return {n:"Sleeve simples + folha do fichário", t:"Carta de baixo valor; a sleeve serve para proteger de dedo e poeira, e evita que a folha risque a carta. Toploader seria gasto desnecessário."};
+}
+function dificuldade(r, v, preco){
+  let base = RAR[r].dif[0] + (VER_DIF[v]||0);
+  if((r==="IR"||r==="UR"||r==="RR") && (preco||0)>=30) base+=1;
+  if((preco||0)>=300) base=4;
+  return Math.min(4, base);
+}
+
+/* ===================== estado (multi-set) ===================== */
+const KEY = "fichario_v2", KEY_OLD = "fichario_CRI_v1";
+function vazio(){ return {sets:{}, setAtual:"CRI", mode:"master", updatedAt:0}; }
+function migrar(s){ // formato antigo (só CRI) -> novo {sets:{CRI:{owned,notes}}}
+  if(!s || typeof s!=="object") return vazio();
+  if(s.sets){ for(const x of Object.values(s.sets)){ for(const k in (x.owned||{})){ if(x.owned[k]===true) x.owned[k]=1; if(!(x.owned[k]>0)) delete x.owned[k]; } } return s; }
+  const n=vazio(); n.sets.CRI={owned:s.owned||{}, notes:s.notes||{}}; for(const k in n.sets.CRI.owned){ if(n.sets.CRI.owned[k]===true) n.sets.CRI.owned[k]=1; } n.mode=s.mode||"master"; n.updatedAt=s.updatedAt||0; n._seeded=s._seeded; return n;
+}
+function load(){ try{ const a=localStorage.getItem(KEY); if(a) return migrar(JSON.parse(a)); const b=localStorage.getItem(KEY_OLD); if(b) return migrar(JSON.parse(b)); }catch(e){} return vazio(); }
+let state = load();
+function cur(){ return state.sets[setId] ??= {owned:{}, notes:{}}; }
+function totalOwned(s){ return Object.values(s.sets||{}).reduce((a,x)=>a+Object.keys(x.owned||{}).length,0); }
+// escolhe entre o navegador e o arquivo data/colecao.js gravado na pasta
+let fonteInicial="navegador";
+(function escolherFonte(){
+  if(!window.COLECAO) return;
+  const F=migrar(window.COLECAO);
+  const nL=totalOwned(state), nF=totalOwned(F);
+  const seeds=["95:H","99:H"]; const ownedL=Object.entries(state.sets).flatMap(([id,x])=>Object.keys(x.owned||{}).map(k=>id+"/"+k));
+  const localSoSemente = ownedL.every(k=>seeds.includes(k.replace("CRI/","")));
+  const usarArquivo=()=>{ state=F; localStorage.setItem(KEY, JSON.stringify(state)); fonteInicial="pasta"; };
+  if(localSoSemente){ usarArquivo(); return; }
+  const tL=state.updatedAt||0, tF=F.updatedAt||0;
+  if(tF>tL){ usarArquivo(); return; }
+  if(tF===tL){ if(nF>=nL) usarArquivo(); return; }
+  if(JSON.stringify(state.sets)===JSON.stringify(F.sets)){ fonteInicial="pasta (igual)"; return; }
+  const q=`Este navegador tem marcações mais recentes que o arquivo da pasta.\n\nNavegador: ${nL} espaços (${new Date(tL).toLocaleString("pt-BR")})\nArquivo:   ${nF} espaços (${tF?new Date(tF).toLocaleString("pt-BR"):"sem data"})\n\nOK = usar as deste navegador (e gravar no arquivo)\nCancelar = usar as do arquivo`;
+  if(!confirm(q)) usarArquivo(); else fonteInicial="navegador (mais recente)";
+})();
+if(!state._seeded){ (state.sets.CRI ??= {owned:{},notes:{}}); state.sets.CRI.owned["95:H"]=1; state.sets.CRI.owned["99:H"]=1; state._seeded=true; localStorage.setItem(KEY, JSON.stringify(state)); }
+
+let fsTimer=null, dirty=false, lastSaved=null;
+function save(){ state.updatedAt=Date.now(); localStorage.setItem(KEY, JSON.stringify(state)); dirty=true; saveUI(); clearTimeout(fsTimer); fsTimer=setTimeout(fsWrite,300); if(typeof ghAgendar==="function") ghAgendar(); }
+function saveUI(){ const b=document.getElementById("btnSalvar"), st=document.getElementById("saveState"); if(!b||!st) return;
+  b.classList.toggle("dirty",dirty); st.classList.toggle("dirty",dirty);
+  const semPasta = !(fsStatus==="on"||fsStatus==="server"); const ghOn = typeof gh!=="undefined" && gh && gh.token;
+  if(semPasta && ghOn){ b.classList.toggle("dirty",!!window.dirtyGh); st.classList.toggle("dirty",!!window.dirtyGh); st.textContent = window.dirtyGh ? "enviando ao GitHub…" : (ghLastSync? "salvo no GitHub às "+new Date(ghLastSync).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) : ""); return; }
+  st.textContent = dirty ? (fsStatus==="on"||fsStatus==="server" ? "gravando…" : (ghOn? "" : "● não salvo na pasta")) : (lastSaved ? "salvo às "+lastSaved.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) : ""); }
+async function salvarAgora(){
+  if(fsStatus==="on"||fsStatus==="server"){ const r=await fsWrite(); if(r) toast("Coleção salva na pasta"); return; }
+  if(fsStatus==="need"||fsStatus==="error"){ await fsAuthorize(); if(fsStatus==="on"){ const r=await fsWrite(); if(r) toast("Coleção salva na pasta"); } return; }
+  if(fsStatus==="off"){ await fsConnect(); return; }
+  const a=document.createElement("a"); a.href="data:application/json,"+encodeURIComponent(JSON.stringify(state,null,2)); a.download=`fichario-${new Date().toISOString().slice(0,10)}.json`; a.click(); toast("Backup JSON baixado — mova para a pasta do fichário");
+}
+
+/* ===================== sincronização com a pasta ===================== */
+const SERVER = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const HOSTED = /github\.io$/.test(location.hostname);
+let dirHandle=null, fsStatus="off"; // off | need | on | unsupported | error | server
+const idb={ open:()=>new Promise((res,rej)=>{ const r=indexedDB.open("fichario_fs",1); r.onupgradeneeded=()=>r.result.createObjectStore("kv"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }),
+  get:async k=>{ const db=await idb.open(); return new Promise((res,rej)=>{ const t=db.transaction("kv").objectStore("kv").get(k); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error); }); },
+  set:async (k,v)=>{ const db=await idb.open(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite").objectStore("kv").put(v,k); t.onsuccess=()=>res(); t.onerror=()=>rej(t.error); }); } };
+async function fsInit(){
+  if(SERVER){ fsStatus="server"; if(dirty) await fsWrite(); renderDash(); saveUI(); return; }
+  if(!window.showDirectoryPicker){ fsStatus="unsupported"; renderDash(); saveUI(); return; }
+  try{ dirHandle=await idb.get("dir"); }catch{}
+  if(!dirHandle){ fsStatus="off"; dirty=true; renderDash(); saveUI(); return; }
+  try{ const p=await dirHandle.queryPermission({mode:"readwrite"}); fsStatus= p==="granted"?"on":"need"; }catch{ fsStatus="need"; }
+  if(fsStatus==="on") await fsWrite(); else { dirty=true; }
+  renderDash(); saveUI();
+}
+async function fsConnect(){
+  try{
+    const h=await window.showDirectoryPicker({mode:"readwrite"});
+    let temIndex=true; try{ await h.getFileHandle("index.html"); }catch{ temIndex=false; }
+    if(!temIndex && !confirm("Essa pasta não parece ser a do fichário (não encontrei index.html). Usar mesmo assim?")) return;
+    dirHandle=h; await idb.set("dir",h); fsStatus="on"; await fsWrite(); renderDash(); toast("Pasta conectada — coleção gravada em data\\colecao.json");
+  }catch(e){ if(e.name!=="AbortError") toast("Não foi possível conectar: "+e.message); }
+}
+async function fsAuthorize(){
+  try{ const p=await dirHandle.requestPermission({mode:"readwrite"}); fsStatus= p==="granted"?"on":"need"; }catch{ fsStatus="need"; }
+  if(fsStatus==="on"){ await fsWrite(); toast("Pasta autorizada"); }
+  renderDash(); saveUI();
+}
+async function fsWrite(){
+  if(!state.updatedAt) state.updatedAt=Date.now();
+  if(fsStatus==="server"){
+    try{ const r=await fetch("/api/salvar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)}); const j=await r.json(); if(!j.ok) throw new Error(j.erro||"resposta inválida");
+      dirty=false; lastSaved=new Date(); saveUI(); return true; }
+    catch(e){ saveUI(); toast("Falha ao gravar pelo servidor: "+e.message); return false; }
+  }
+  if(fsStatus!=="on"||!dirHandle) return;
+  try{
+    const data=await dirHandle.getDirectoryHandle("data",{create:true});
+    const fh=await data.getFileHandle("colecao.js",{create:true}); const w=await fh.createWritable(); await w.write("window.COLECAO = "+JSON.stringify(state)+";"); await w.close();
+    const fj=await data.getFileHandle("colecao.json",{create:true}); const w2=await fj.createWritable(); await w2.write(JSON.stringify(state,null,2)); await w2.close();
+    dirty=false; lastSaved=new Date(); saveUI(); return true;
+  }catch(e){ fsStatus="error"; renderDash(); saveUI(); toast("Falha ao gravar na pasta: "+e.message); return false; }
+}
+function fsBlock(){
+  const dt= state.updatedAt? new Date(state.updatedAt).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}) : "—";
+  const st={
+    server:`<span style="color:#1f6b3f">● Servidor local</span> — grava direto em <b>data\\colecao.json</b>, sem pedir permissão.`,
+    on:`<span style="color:#1f6b3f">● Conectada</span> — cada marcação grava em <b>data\\colecao.json</b>.`,
+    need:`<span style="color:#7a5a00">● Pasta lembrada, falta autorizar</span> — o navegador pede isso a cada sessão.`,
+    off:`<span style="color:var(--ink-soft)">○ Não conectada</span> — as marcações ficam só neste navegador.`,
+    error:`<span style="color:#8b1f1f">● Erro ao gravar</span> — tente autorizar de novo.`,
+    unsupported:`<span style="color:#8b1f1f">○ Este navegador não suporta gravar na pasta</span> — use Chrome ou Edge, ou o backup JSON.`}[fsStatus];
+  const btn= fsStatus==="on"? `<button id="fsChange">Trocar pasta</button>` : fsStatus==="need"||fsStatus==="error"? `<button id="fsAuth" style="background:var(--energy);border-color:var(--energy-deep);font-weight:800">Autorizar pasta</button><button id="fsChange">Trocar pasta</button>` : fsStatus==="off"? `<button id="fsConn" style="background:var(--energy);border-color:var(--energy-deep);font-weight:800">Conectar pasta do fichário</button>` : "";
+  return `<h2>Sincronização com a pasta</h2><p style="font-size:12.5px;margin:0 0 6px">${st}</p><p style="font-size:12px;color:var(--ink-soft);margin:0 0 6px">Última alteração: ${dt} · carregado de: ${fonteInicial} · todos os sets: ${totalOwned(state)} espaços</p><div class="actions">${btn}</div>`;
+}
+
+/* ===================== set atual e modelo ===================== */
+let setId = SETS[state.setAtual] ? state.setAtual : SET_IDS[0];
+let SET, H, CARDS, allDates;
+const pad3 = n=>String(n).padStart(3,"0");
+const slug = s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+const fmtD = d=>d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4);
+const addDays = (d,k)=>{ const x=new Date(d+"T12:00:00"); x.setDate(x.getDate()+k); return x.toISOString().slice(0,10); };
+function loadSet(id){
+  setId=id; SET=SETS[id]; H=window["HISTORICO_"+id]||null;
+  const tb=pad3(SET.totalBase);
+  CARDS = SET.cartas.map(([n,nome,r,tipo,cat,preco,numLabel,imgFile])=>({n,nome,r,tipo,cat,preco,num: numLabel||(pad3(n)+"/"+tb), imgFile}))
+    .concat((SET.promos||[]).map(([n,nome,tipo,origem,imgFile])=>({n:1000+n, pn:n, promo:true, nome, r:"PROMO", tipo, cat:"Pokémon", preco:null, origem, imgFile, num:"PROMO "+pad3(n)})));
+  if(H){ CARDS.forEach(c=>{ const s=serie(c.n); if(s.length) c.preco=s[s.length-1][1]; }); SET.precosAtualizadosEm=fmtD(H.atualizadoAt||H.atualizadoEm); }
+  allDates = H? [...new Set(Object.values(H.cartas).flatMap(c=>Object.keys(c.serie)))].sort() : [];
+  document.getElementById("setTitle").textContent=`${SET.nome} · ${SET.codigo} · ${SET.idioma}`;
+  document.title="Meu Fichário — "+SET.nome;
+}
+function versoesDe(c){ let vs=[...RAR[c.r].versoes]; if(SET.semReverse) vs=vs.filter(v=>v!=="RV"); if(!c.promo && ["C","U","R"].includes(c.r)) for(const x of (SET.versoesExtra||[])) vs.push(x); return vs; }
+function slotsFor(mode){
+  const out=[];
+  for(const c of CARDS){ for(const v of versoesDe(c)){ if(mode==="base" && v!=="N" && v!=="H") continue; out.push({...c, v, key:c.n+":"+v, preco: (v==="N"||v==="H")? c.preco : null}); } }
+  return out;
+}
+const imgLocal = c=> (c.promo? SET.imgPromoLocal.replace("{n}",pad3(c.pn)) : SET.imgLocal.replace("{n}",pad3(c.n))).replace("{slug}",slug(c.nome)).replace("{file}",c.imgFile||"");
+const imgRemote= c=> { if(!c.promo && c.imgFile && window["IMG_"+SET.id] && window["IMG_"+SET.id][c.imgFile]) return window["IMG_"+SET.id][c.imgFile]; const u= c.promo? SET.imgPromoRemota : SET.imgRemota; return u? u.replace("{n}",pad3(c.promo?c.pn:c.n)) : ""; };
+const brl = v=> v==null? "—" : v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const ligaUrl = c=>"https://www.ligapokemon.com.br/?view=cards/search&card="+encodeURIComponent(c.promo? c.nome+" promo" : c.nome+" ed="+SET.id);
+const cartinhaUrl = c=> c.promo? (CARTINHA_PROMO[setId]? "https://cartinha.gg/cards/"+CARTINHA_PROMO[setId]+"-"+pad3(c.pn) : "https://cartinha.gg/search?q="+encodeURIComponent(c.nome)+"&game=pokemon") : (c.n<200? "https://cartinha.gg/cards/"+(SET.cartinhaSet||SET.codigo.toLowerCase())+"-"+pad3(c.n) : "https://cartinha.gg/search?q="+encodeURIComponent(c.nome)+"&game=pokemon");
+function exemploDe(k){ const ex=(EXEMPLOS[setId]||{})[k]; const c= ex? CARDS.find(x=>x.n===ex) : null; return c || CARDS.find(x=>x.r===k); }
+
+/* ===================== histórico de preços ===================== */
+function serie(n){ const c=H&&H.cartas[pad3(n)]; return c? Object.entries(c.serie) : []; }
+function precoEm(n,dt){ const s=serie(n); if(!s.length) return null; let v=s[0][1]; for(const [d,p] of s){ if(d<=dt) v=p; else break; } return v; }
+function variacao(n,dias){ const s=serie(n); if(s.length<2) return null; const [dl,pl]=s[s.length-1]; const ant= dias==null? s[0][1] : precoEm(n,addDays(dl,-dias)); if(!ant) return null; return {de:ant,para:pl,pct:(pl-ant)/ant*100,abs:pl-ant}; }
+function totalSerie(keys){ return allDates.map(d=>[d, keys.reduce((a,n)=>a+(precoEm(n,d)||0),0)]); }
+function pctTxt(p){ return (p>0?"+":"")+p.toLocaleString("pt-BR",{maximumFractionDigits:1})+"%"; }
+function lineChart(pts,{h=140,w=520,cls="ln",fill=true,money=true}={}){
+  if(pts.length<2) return `<p style="font-size:13px;color:var(--ink-soft)">Sem histórico suficiente ainda.</p>`;
+  const L=44,R=8,T=10,B=22, vs=pts.map(p=>p[1]), mn=Math.min(...vs), mx=Math.max(...vs), span=(mx-mn)||1;
+  const X=i=>L+(w-L-R)*i/(pts.length-1), Y=v=>T+(h-T-B)*(1-(v-mn)/span);
+  const path=pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
+  const f=v=>money? (v>=100? v.toLocaleString("pt-BR",{maximumFractionDigits:0}) : v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})) : v;
+  const last=pts[pts.length-1];
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img"><defs><linearGradient id="gA" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e0a800" stop-opacity=".25"/><stop offset="1" stop-color="#e0a800" stop-opacity="0"/></linearGradient></defs>
+  <line x1="${L}" x2="${w-R}" y1="${Y(mx)}" y2="${Y(mx)}" stroke="#eee"/><line x1="${L}" x2="${w-R}" y1="${Y(mn)}" y2="${Y(mn)}" stroke="#eee"/>
+  <text class="ax" x="${L-4}" y="${Y(mx)+4}" text-anchor="end">${f(mx)}</text><text class="ax" x="${L-4}" y="${Y(mn)+4}" text-anchor="end">${f(mn)}</text>
+  ${fill?`<path class="ar" d="${path} L${X(pts.length-1).toFixed(1)} ${h-B} L${L} ${h-B} Z"/>`:""}
+  <path class="${cls}" d="${path}"/><circle class="dot" cx="${X(pts.length-1)}" cy="${Y(last[1])}" r="3"/>
+  <text class="ax" x="${L}" y="${h-6}">${fmtD(pts[0][0])}</text><text class="ax" x="${w-R}" y="${h-6}" text-anchor="end">${fmtD(last[0])}</text></svg>`;
+}
+
+/* ===================== UI: abas, filtros ===================== */
+let mode=(state.mode==="base"?"base":"master"), page=0, filtered=[];
+const $ = s=>document.querySelector(s);
+const q=$("#q"), fRar=$("#fRar"), fStat=$("#fStat"), sort=$("#sort"), pMin=$("#pMin"), pMax=$("#pMax");
+function renderTabs(){ $("#setSeg").innerHTML=SET_IDS.filter(id=>SETS[id]).map(id=>{ const s=SETS[id]; const st=state.sets[id]||{owned:{}}; const n=Object.keys(st.owned||{}).length;
+  return `<button data-s="${id}" class="${id===setId?"on":""}">${s.nome}<small>${s.codigo} · ${n} marcadas</small></button>`; }).join(""); }
+function fillRar(){ const keep=fRar.value; fRar.innerHTML='<option value="">Todas as raridades</option>'; for(const k of Object.keys(RAR)){ if(!CARDS.some(c=>c.r===k)) continue; const o=document.createElement("option"); o.value=k; o.textContent=RAR[k].nome; fRar.appendChild(o); } fRar.value = [...fRar.options].some(o=>o.value===keep)? keep : ""; }
+function switchSet(id){ if(!SETS[id]||id===setId) return; loadSet(id); state.setAtual=id; save(); fillRar(); renderTabs(); page=0; closePanel(); render(); document.querySelector("main").scrollTo({top:0}); toast("Fichário: "+SET.nome); }
+$("#setSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) switchSet(b.dataset.s); });
+[q,fRar,fStat,sort,pMin,pMax].forEach(el=>el.addEventListener("input",()=>{page=0;render();}));
+$("#modeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  mode=b.dataset.m; state.mode=mode; save(); [...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b)); page=0; render(); });
+[...$("#modeSeg").children].forEach(x=>x.classList.toggle("on",x.dataset.m===mode));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePanel(); });
+$("#topo").onclick=()=>document.querySelector("main").scrollTo({top:0,behavior:"smooth"});
+document.querySelector("main").addEventListener("scroll",e=>{ $("#topo").classList.toggle("show",e.target.scrollTop>600); });
+
+function norm(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+function applyFilters(){
+  const all = slotsFor(mode);
+  const t = norm(q.value.trim());
+  let list = all.filter(s=>{
+    if(t && !(norm(s.nome).includes(t) || String(s.promo?s.pn:s.n).includes(t.replace(/^0+/,"")) || norm(s.num).includes(t) || norm(VER[s.v]).includes(t))) return false;
+    if(fRar.value && s.r!==fRar.value) return false;
+    const mn=parseFloat(pMin.value), mx=parseFloat(pMax.value);
+    if(!isNaN(mn)||!isNaN(mx)){ if(s.preco==null) return false; if(!isNaN(mn)&&s.preco<mn) return false; if(!isNaN(mx)&&s.preco>mx) return false; }
+    const has=!!cur().owned[s.key];
+    if(fStat.value==="have" && !has) return false;
+    if(fStat.value==="miss" && has) return false;
+    if(fStat.value==="dup" && qtyOf(s.key)<2) return false;
+    return true;
+  });
+  const vo={N:0,H:0,RV:1,PB:2,MB:3};
+  const cmp = {
+    num:(a,b)=>a.n-b.n || vo[a.v]-vo[b.v],
+    name:(a,b)=>a.nome.localeCompare(b.nome,"pt-BR")||a.n-b.n||vo[a.v]-vo[b.v],
+    nameDesc:(a,b)=>b.nome.localeCompare(a.nome,"pt-BR")||a.n-b.n||vo[a.v]-vo[b.v],
+    priceDesc:(a,b)=>(b.preco??-1)-(a.preco??-1)||a.n-b.n,
+    priceAsc:(a,b)=>(a.preco??1e9)-(b.preco??1e9)||a.n-b.n
+  }[sort.value];
+  list.sort(cmp);
+  return list;
+}
+
+/* ===================== UI: álbum ===================== */
+function render(){ filtered=applyFilters(); renderGrid(); renderDash(); }
+function badge(s){ if(s.promo) return '<span class="rv promo">Promo</span>'; if(s.v==="RV") return '<span class="rv">Reverse foil</span>'; if(s.v==="PB") return '<span class="rv pb">Poké Ball</span>'; if(s.v==="MB") return '<span class="rv mb">Master Ball</span>'; return ""; }
+function priceLine(s){
+  if(s.v!=="N" && s.v!=="H") return `<div class="pr"><span class="dt">preço: ver versão normal</span></div>`;
+  const hc = H && H.cartas[pad3(s.n)];
+  if(hc){ const ds=Object.keys(hc.serie).sort(); const d=ds[ds.length-1]; const mn=hc.serie[d]; const mx=hc.max&&hc.max[d];
+    let tr=""; if(ds.length>1){ const prev=hc.serie[ds[ds.length-2]]; if(prev){ const pc=(mn-prev)/prev*100; if(Math.abs(pc)>=0.5) tr=` <span class="${pc>0?"up":"dn"}">${pc>0?"▲":"▼"} ${Math.abs(pc).toLocaleString("pt-BR",{maximumFractionDigits:0})}%</span>`; } }
+    return `<div class="pr">Menor <b>${brl(mn)}</b>${mx!=null?` · Maior ${brl(mx)}`:""}${tr}<br><span class="dt">Liga · ${fmtD(d)}</span></div>`; }
+  if(s.preco!=null) return `<div class="pr">Ref. <b>${brl(s.preco)}</b><br><span class="dt">Deck Certo · ${SET.precosAtualizadosEm}</span></div>`;
+  return `<div class="pr"><span class="dt">sem preço de referência</span></div>`;
+}
+function renderGrid(){
+  const g=$("#grid"); g.innerHTML="";
+  $("#cnt").textContent=`${filtered.length} ${filtered.length===1?"espaço":"espaços"}`;
+  if(!filtered.length){ g.innerHTML=`<div class="noresult" style="grid-column:1/-1">Nenhuma carta com esses filtros. Limpe a busca ou troque o filtro.</div>`; return; }
+  const dividers = sort.value==="num" && !q.value.trim() && !fRar.value && !fStat.value && !pMin.value && !pMax.value;
+  const frag=document.createDocumentFragment();
+  filtered.forEach((s,i)=>{
+    if(dividers && i%9===0){ const h=document.createElement("div"); h.className="pgdiv"; h.textContent=`Página ${i/9+1} do fichário`; frag.appendChild(h); }
+    const has=!!cur().owned[s.key];
+    const el=document.createElement("div");
+    el.className="slot"+(has?"":" miss");
+    el.innerHTML=`
+      ${badge(s)}
+      <div class="img" title="Abrir detalhes"><img loading="lazy" alt="${s.nome} ${s.num}" src="${imgLocal(s)}" data-remote="${imgRemote(s)}"></div>
+      <div class="meta"><span class="nm">${s.nome}</span><span class="no">${s.num}</span></div>
+      ${priceLine(s)}
+      <div class="row"><span class="rar" style="color:${RAR[s.r].cor}"><span class="sym">${RAR[s.r].simbolo}</span> ${RAR[s.r].nome}${s.v==="H"&&s.r==="R"?" · holo":""}</span>
+        ${qtyHtml(s.key)}</div>`;
+    el.querySelector("img").onerror=imgFallback;
+    el.querySelector(".img").onclick=()=>openPanel(s);
+    bindQty(el);
+    frag.appendChild(el);
+  });
+  g.appendChild(frag);
+}
+function imgFallback(e){
+  const img=e.target;
+  if(img.dataset.remote && img.dataset.remote!==""){ img.src=img.dataset.remote; img.dataset.remote=""; return; }
+  img.onerror=null;
+  const t=img.alt.replace(/&/g,"&amp;");
+  img.src="data:image/svg+xml;utf8,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='350' height='489'><rect width='100%' height='100%' fill='#1f2747'/><text x='50%' y='50%' fill='#aab3dd' font-family='sans-serif' font-size='22' text-anchor='middle'>${t}</text><text x='50%' y='58%' fill='#6c76a8' font-family='sans-serif' font-size='14' text-anchor='middle'>imagem não encontrada</text></svg>`);
+}
+const qtyOf = key=>{ const v=cur().owned[key]; return v===true?1:(v>0?v:0); };
+const qtyHtml = (key,light)=>{ const q=qtyOf(key); return `<span class="qty ${q?"on":""}" data-k="${key}" title="Quantas cópias você tem"><button data-d="-1" aria-label="menos">−</button><span class="n">${q?("Tenho ×"+q):"Falta"}</span><button data-d="1" aria-label="mais">+</button></span>`; };
+function bindQty(root){ root.querySelectorAll(".qty button").forEach(b=>b.onclick=e=>{ e.stopPropagation(); const k=b.parentElement.dataset.k; setQty(k, qtyOf(k)+(+b.dataset.d)); }); }
+function toggle(key,val){ setQty(key, val?Math.max(1,qtyOf(key)):0); }
+function setQty(key,n){ n=Math.max(0,Math.min(99,n|0)); const val=n>0; if(val) cur().owned[key]=n; else delete cur().owned[key]; save();
+  if(fStat.value){ render(); } else {
+    const idx=filtered.findIndex(s=>s.key===key); const slots=[...$("#grid").querySelectorAll(".slot")];
+    if(idx>=0 && slots[idx]){ const el=slots[idx]; el.classList.toggle("miss",!val); const q=el.querySelector(".qty"); if(q){ q.classList.toggle("on",val); q.querySelector(".n").textContent= val?("Tenho ×"+n):"Falta"; } }
+    renderDash(); }
+  renderTabs();
+  if(panelKey===key.split(":")[0]) openPanel(panelCard); toast(val?("Tenho ×"+n):"Marcada como falta"); }
+
+/* ===================== UI: dashboard ===================== */
+function renderDash(){
+  const all=slotsFor(mode);
+  const have=all.filter(s=>cur().owned[s.key]);
+  const miss=all.filter(s=>!cur().owned[s.key]);
+  const pct=all.length?Math.round(100*have.length/all.length):0;
+  const vHave=have.reduce((a,s)=>a+(s.preco||0),0), vMiss=miss.reduce((a,s)=>a+(s.preco||0),0);
+  const totalCartas=all.reduce((a,s)=>a+qtyOf(s.key),0), repetidas=all.reduce((a,s)=>a+Math.max(0,qtyOf(s.key)-1),0), vRep=all.reduce((a,s)=>a+Math.max(0,qtyOf(s.key)-1)*(s.preco||0),0);
+  const byR={}; for(const s of all){ byR[s.r]??={t:0,h:0}; byR[s.r].t++; if(cur().owned[s.key]) byR[s.r].h++; }
+  const missSorted=[...miss].sort((a,b)=>dificuldade(b.r,b.v,b.preco)-dificuldade(a.r,a.v,a.preco)||(b.preco||0)-(a.preco||0));
+  const extras=(SET.versoesExtra||[]).map(v=>VER[v]).join(", ");
+  const r=44, C=2*Math.PI*r;
+  $("#dash").innerHTML=`
+    ${fsBlock()}
+    <h2>${SET.nome} · ${mode==="base"?"set base":"master set"} · ${all.length} espaços (${SET.cartas.length} cartas${mode==="master"?" + reverse"+(extras?" + "+extras:""):""} + ${(SET.promos||[]).length} promos)</h2>
+    <div class="ring">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#ece8de" stroke-width="9"/>
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="#e0a800" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}" transform="rotate(-90 50 50)"/>
+        <text x="50" y="55" text-anchor="middle" font-size="20" font-weight="800" fill="#1d2033">${pct}%</text></svg>
+      <div><div class="big">${have.length}<small> / ${all.length}</small></div><p>${miss.length} ${miss.length===1?"espaço faltando":"espaços faltando"}<br>${totalCartas} cartas físicas · ${repetidas} repetidas</p></div>
+    </div>
+    <h2>Valor estimado (mercado BR)</h2>
+    <div class="kv"><span>Do que eu tenho (1 de cada)</span><b>${brl(vHave)}</b><span>Repetidas (para troca)</span><b>${brl(vRep)}</b><span>Do que falta</span><b>${brl(vMiss)}</b><span>Set completo</span><b>${brl(vHave+vMiss)}</b></div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0">Menor preço anunciado na LigaPokémon em ${SET.precosAtualizadosEm} (versão normal)${SET.id==="30C"?"; Coleção Clássica e Energias com preço de referência do Deck Certo":""}. Reverse foil, padrões Poké Ball e promos sem referência — não entram na conta.</p>
+    ${dashPrecos()}
+    <h2 id="hRar" class="hlink" title="Abrir o guia de raridades (símbolos e exemplos)">Por raridade <span class="hint">ver guia ↗</span></h2>
+    <div class="bars" id="bars">${Object.keys(RAR).filter(k=>byR[k]).map(k=>`<div class="bar ${fRar.value===k?"sel":""}" data-r="${k}" title="Mostrar só as cartas desta raridade (clique de novo para limpar)"><div class="t"><span>${rarIcon(k)}${RAR[k].nome}</span><span>${byR[k].h}/${byR[k].t}</span></div><div class="l"><i style="width:${100*byR[k].h/byR[k].t}%"></i></div></div>`).join("")}</div>
+    <h2>Faltando · das mais difíceis às fáceis</h2>
+    <ul class="missing" id="missList">${missSorted.slice(0,40).map(s=>`<li data-k="${s.key}"><span><span class="n">${s.num}</span> ${s.nome}${s.v!=="N"&&s.v!=="H"?` <em>(${VER[s.v].toLowerCase()})</em>`:""}</span><span class="chip d${dificuldade(s.r,s.v,s.preco)}">${DIF[dificuldade(s.r,s.v,s.preco)]}</span></li>`).join("")}</ul>
+    ${missSorted.length>40?`<p style="font-size:12px;color:var(--ink-soft)">Mostrando 40 de ${missSorted.length}. Use o filtro "Só as que faltam" para ver todas.</p>`:""}
+    <h2>Backup</h2>
+    <div class="actions">
+      <button id="exp">Exportar minha coleção (JSON, todos os sets)</button>
+      <button id="imp">Importar coleção de um arquivo</button>
+      <button id="clr">Desmarcar tudo deste set</button>
+    </div>`;
+  const fc=$("#fsConn"); if(fc) fc.onclick=fsConnect; const fa=$("#fsAuth"); if(fa) fa.onclick=fsAuthorize; const fch=$("#fsChange"); if(fch) fch.onclick=fsConnect;
+  $("#bars").onclick=e=>{ const b=e.target.closest(".bar"); if(!b) return; fRar.value = (fRar.value===b.dataset.r) ? "" : b.dataset.r; page=0; render(); document.querySelector("main").scrollTo({top:0}); toast(fRar.value? "Mostrando: "+RAR[fRar.value].nome : "Filtro de raridade limpo"); };
+  $("#hRar").onclick=()=>openGuia(fRar.value||null);
+  $("#missList").onclick=e=>{ const li=e.target.closest("li"); if(!li) return; openPanel(slotsFor("master").find(s=>s.key===li.dataset.k)); };
+  $("#exp").onclick=()=>{ const a=document.createElement("a"); a.href="data:application/json,"+encodeURIComponent(JSON.stringify(state,null,2)); a.download=`fichario-${new Date().toISOString().slice(0,10)}.json`; a.click(); toast("Backup exportado"); };
+  $("#imp").onclick=()=>$("#importFile").click();
+  $("#clr").onclick=()=>{ if(confirm(`Desmarcar todas as cartas de ${SET.nome}? Os outros sets não são afetados.`)){ cur().owned={}; save(); render(); renderTabs(); } };
+}
+$("#importFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=migrar(JSON.parse(rd.result)); if(!d.sets) throw 0; state=d; save(); loadSet(SETS[state.setAtual]?state.setAtual:setId); fillRar(); renderTabs(); render(); toast("Coleção importada"); }catch{ toast("Arquivo inválido"); } }; rd.readAsText(f); e.target.value=""; };
+
+/* ===================== preços ===================== */
+function movers(dias,minPreco){ const out=[]; for(const c of CARDS){ if(c.promo) continue; const v=variacao(c.n,dias); if(!v||v.de<minPreco) continue; out.push({...c,...v}); } return out; }
+function dashPrecos(){
+  if(!H) return `<p style="font-size:12px;color:var(--ink-soft)">Sem histórico de preços deste set ainda. Use o botão <b>Atualizar preços</b>.</p>`;
+  const tot=totalSerie(CARDS.filter(c=>!c.promo).map(c=>c.n)); const last=tot[tot.length-1][1]; const antD=addDays(tot[tot.length-1][0],-15); const ant=(tot.filter(p=>p[0]<=antD).pop()||tot[0])[1];
+  const mv=movers(15,2); const up=[...mv].sort((a,b)=>b.pct-a.pct)[0], dn=[...mv].sort((a,b)=>a.pct-b.pct)[0];
+  return `<h2>Últimos 15 dias</h2>
+    <div class="kv"><span>Set completo</span><b class="${last>=ant?"up":"dn"}">${pctTxt((last-ant)/ant*100)}</b>
+    ${up?`<span>Mais subiu</span><b class="up">${up.nome} ${pctTxt(up.pct)}</b>`:""}
+    ${dn?`<span>Mais caiu</span><b class="dn">${dn.nome} ${pctTxt(dn.pct)}</b>`:""}</div>
+    <div class="actions"><button id="openPrecos">Abrir painel de preços</button></div>`;
+}
+let janela=15, minP=2;
+function openPrecos(){
+  if(!H){ toast("Sem histórico de preços deste set ainda"); return; }
+  const tot=totalSerie(CARDS.filter(c=>!c.promo).map(c=>c.n));
+  const mine=CARDS.filter(c=>!c.promo&&(qtyOf(c.n+":H")||qtyOf(c.n+":N"))).map(c=>c.n);
+  const my=mine.length? totalSerie(mine):[];
+  const dl=tot[tot.length-1][0]; const cut= janela==null? tot[0][0] : addDays(dl,-janela);
+  const win=p=>p.filter(x=>x[0]>=cut);
+  const totW=win(tot), myW=win(my);
+  const d=(s)=>{ if(s.length<2) return null; const a=s[0][1], b=s[s.length-1][1]; return {a,b,pct:(b-a)/a*100}; };
+  const dt=d(totW), dm=d(myW);
+  const mv=movers(janela,minP); const ups=[...mv].sort((a,b)=>b.pct-a.pct).slice(0,10); const dns=[...mv].sort((a,b)=>a.pct-b.pct).filter(x=>x.pct<0).slice(0,10);
+  const row=m=>`<li data-n="${m.n}"><span class="n">${m.num.slice(0,3)}</span><span>${m.nome}<br><small style="color:var(--ink-soft)">${RAR[m.r].nome}</small></span><span class="p">${brl(m.de)} → ${brl(m.para)}</span><span class="v ${m.pct>=0?"up":"dn"}">${pctTxt(m.pct)}</span></li>`;
+  const segBtn=(v,l)=>`<button data-j="${v}" class="${janela===v?"on":""}">${l}</button>`;
+  $("#panel").innerHTML=`
+    <div class="head"><h2>Preços · ${SET.nome}<small>mercado BR · ${H.fonte} · atualizado em ${fmtD(H.atualizadoEm)} · ${allDates.length} datas desde ${fmtD(allDates[0])}</small></h2><button class="x" aria-label="Fechar">×</button></div>
+    <div class="pan">
+      <div class="seg" id="janSeg">${segBtn(15,"15 dias")}${segBtn(30,"30 dias")}${segBtn(60,"60 dias")}${segBtn(null,"Tudo")}</div>
+      <div><h3 style="margin:0 0 4px;font-size:14px">Valor do set completo (${SET.cartas.length} cartas, versão normal)</h3>
+        <div class="stat"><div>Hoje<b>${brl(tot[tot.length-1][1])}</b></div>${dt?`<div>Na janela<b class="${dt.pct>=0?"up":"dn"}">${pctTxt(dt.pct)}</b></div>`:""}</div>${lineChart(totW)}</div>
+      <div><h3 style="margin:0 0 4px;font-size:14px">Valor do que eu tenho (${mine.length} ${mine.length===1?"carta":"cartas"})</h3>
+        ${mine.length?`<div class="stat"><div>Hoje<b>${brl(my[my.length-1][1])}</b></div>${dm?`<div>Na janela<b class="${dm.pct>=0?"up":"dn"}">${pctTxt(dm.pct)}</b></div>`:""}</div>${lineChart(myW,{cls:"lnB",fill:false})}`:`<p style="font-size:13px;color:var(--ink-soft)">Marque cartas como "Tenho" para ver a evolução da sua coleção.</p>`}</div>
+      <div class="two">
+        <div><h3 style="margin:0 0 6px;font-size:14px">Mais valorizadas</h3><ul class="mv">${ups.map(row).join("")||"<li>—</li>"}</ul></div>
+        <div><h3 style="margin:0 0 6px;font-size:14px">Mais desvalorizadas</h3><ul class="mv">${dns.map(row).join("")||"<li>Nenhuma queda na janela.</li>"}</ul></div>
+      </div>
+      <label style="font-size:13px;color:var(--ink-soft)"><input type="checkbox" id="minChk" ${minP>0?"checked":""}> Ignorar cartas abaixo de R$ 2 (centavos geram variações enganosas)</label>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0">Cada clique em <b>Atualizar preços</b> grava o menor/médio/maior preço do dia da LigaPokémon no histórico deste set; pontos antigos nunca são apagados.${H.origemAnterior?" Pontos anteriores: "+H.origemAnterior+".":""} Quanto mais vezes atualizar, mais fino o gráfico.</p>
+    </div>`;
+  $("#panel .x").onclick=closePanel;
+  $("#janSeg").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; janela= b.dataset.j==="null"? null : +b.dataset.j; openPrecos(); };
+  $("#minChk").onchange=e=>{ minP=e.target.checked?2:0; openPrecos(); };
+  $("#panel").querySelectorAll(".mv li[data-n]").forEach(li=>li.onclick=()=>{ const c=CARDS.find(x=>x.n===+li.dataset.n); openPanel(slotsFor("master").find(s=>s.n===c.n&&(s.v==="N"||s.v==="H"))); });
+  $("#panel").classList.add("open"); $("#veil").classList.add("open");
+}
+$("#btnPrecos").onclick=openPrecos;
+$("#btnSalvar").onclick=salvarAgora;
+$("#btnAtualizar").onclick=atualizarPrecos;
+async function atualizarPrecos(){
+  const head=`<div class="head"><h2>Atualizar preços · ${SET.nome}<small>Fonte: LigaPokémon (abre o site em segundo plano no seu Chrome) · acrescenta o ponto de hoje ao histórico</small></h2><button class="x" aria-label="Fechar">×</button></div>`;
+  const show=html=>{ $("#panel").innerHTML=head+`<div class="pan">${html}</div>`; $("#panel .x").onclick=closePanel; $("#panel").classList.add("open"); $("#veil").classList.add("open"); };
+  if(!SERVER){ show(`<p>Os preços são coletados no <b>notebook</b> (o Chrome de lá lê a LigaPokémon) e publicados para cá.</p><p>No notebook: abra pelo <b>Abrir Fichario.cmd</b> e use este botão, ou dê dois cliques em <b>Atualizar precos.cmd</b>. Em ~1 minuto, toque em <b>Atualizar app</b> aqui.</p>`); return; }
+  show(`<p>Baixando os preços de hoje de ${SET.nome}… leva uns 20–30 segundos.</p>`);
+  try{
+    const r=await fetch("/api/atualizar-precos?set="+setId,{method:"POST"}); const j=await r.json();
+    if(j.ok){ show(`<p style="color:#1f6b3f;font-weight:800">Histórico atualizado.</p><pre style="white-space:pre-wrap;font-size:12px;background:var(--paper);padding:10px;border-radius:8px">${(j.saida||"").replace(/</g,"&lt;")}</pre><div class="actions"><button id="rl">Recarregar o fichário com os preços novos</button></div>`); $("#rl").onclick=()=>location.reload(); }
+    else show(`<p style="color:#8b1f1f;font-weight:800">Não deu certo.</p><pre style="white-space:pre-wrap;font-size:12px">${(j.saida||j.erro||"").replace(/</g,"&lt;")}</pre>`);
+  }catch(e){ show(`<p style="color:#8b1f1f">Erro: ${e.message}</p>`); }
+}
+document.addEventListener("click",e=>{ if(e.target.id==="openPrecos") openPrecos(); });
+
+/* ===================== guia de raridades ===================== */
+function openGuia(focus){
+  const items=Object.keys(RAR).filter(k=>CARDS.some(c=>c.r===k)).map(k=>{ const c=exemploDe(k); const p=protecao(k,"H",0);
+    return `<div class="gi" id="gi-${k}">${rarCrop(c)}<div><h3>${rarIcon(k)}${RAR[k].nome}</h3><small>Símbolo: ${RAR_LEGENDA[k]} · exemplo: ${c.nome} ${c.num} · versões: ${versoesDe(c).map(v=>VER[v]).join(", ")}</small><p>${RAR[k].expl}</p><p><b>Guardar:</b> ${p.n}.</p></div></div>`; }).join("");
+  const extra=(SET.versoesExtra||[]).length? `<p style="font-size:12.5px;margin:0"><b>Padrão Poké Ball / Master Ball:</b> neste set, as comuns, incomuns e raras também saem com a moldura estampada de Poké Balls (e um subconjunto com Master Balls). São versões de colecionador, mais raras que a reverse comum, com a mesma numeração. O fichário conta o padrão Poké Ball no master set; Master Ball ainda não está modelado.</p>`:"";
+  $("#panel").innerHTML=`<div class="head"><h2>Guia de raridades · ${SET.nome}<small>Recorte ampliado do canto inferior esquerdo de uma carta real de cada raridade. O símbolo fica logo depois da numeração.</small></h2><button class="x" aria-label="Fechar">×</button></div>
+    <div class="pan"><div class="guia">${items}</div>${extra}
+    <p style="font-size:12px;color:var(--ink-soft);margin:0">Reverse foil não tem símbolo próprio: é a mesma carta com o brilho na moldura, mesmo símbolo.</p></div>`;
+  $("#panel .x").onclick=closePanel;
+  $("#panel").classList.add("open"); $("#veil").classList.add("open");
+  if(focus){ const el=$("#gi-"+focus); if(el){ el.scrollIntoView({block:"start"}); el.style.outline="2px solid var(--energy-deep)"; } }
+}
+
+/* ===================== UI: painel de detalhe ===================== */
+let panelKey=null, panelCard=null;
+function openPanel(s){
+  panelKey=String(s.n); panelCard=s;
+  const c=CARDS.find(x=>x.n===s.n); const R=RAR[c.r]; const vs=versoesDe(c);
+  const vers=vs.map(v=>{ const k=c.n+":"+v; const has=!!cur().owned[k];
+    return `<div class="ver"><div><b>${VER[v]}</b><div style="font-size:12px;color:var(--ink-soft)">${(v==="N"||v==="H")?brl(c.preco):"sem preço de referência"} · dificuldade ${DIF[dificuldade(c.r,v,c.preco)]}</div></div>
+      ${qtyHtml(k)}</div>`; }).join("");
+  const p=protecao(c.r,"H",c.preco);
+  $("#panel").innerHTML=`
+    <div class="head"><h2>${c.nome}<small>${c.num} · ${SET.nome}${c.cat?" · "+c.cat:""}${c.tipo?" · "+c.tipo:""}</small></h2><button class="x" aria-label="Fechar">×</button></div>
+    <div class="body">
+      <div><img alt="${c.nome}" src="${imgLocal(c)}" data-remote="${imgRemote(c)}"><div class="links"><a class="lk" target="_blank" rel="noopener" href="${cartinhaUrl(c)}">Ver no cartinha.gg</a><a class="lk" target="_blank" rel="noopener" href="${ligaUrl(c)}">Buscar no LigaPokémon</a></div></div>
+      <div class="facts">
+        <div class="price">${c.promo?"sem preço de referência":brl(c.preco)} <small>${c.promo?"promo · fora da fonte de preços":"menor preço na Liga · "+SET.precosAtualizadosEm}</small></div>
+        ${(()=>{ const hc=H&&H.cartas[pad3(c.n)]; if(!hc||!hc.med) return ""; const ds=Object.keys(hc.med); if(!ds.length) return ""; const d=ds[ds.length-1];
+          return `<div style="font-size:13px;color:var(--ink-soft);margin-top:-4px">LigaPokémon em ${fmtD(d)}: <b>menor ${brl(hc.serie[d])}</b> · médio ${brl(hc.med[d])} · maior ${brl(hc.max[d])}</div>`; })()}
+        ${(()=>{ const s=serie(c.n); if(s.length<2) return ""; const v15=variacao(c.n,15), v30=variacao(c.n,30), vAll=variacao(c.n,null);
+          const mx=Math.max(...s.map(p=>p[1])), mn=Math.min(...s.map(p=>p[1]));
+          return `${lineChart(s,{h:110,w:320})}<div class="card-var">${v15?`<span>15 dias <b class="${v15.pct>=0?"up":"dn"}">${pctTxt(v15.pct)}</b></span>`:""}${v30?`<span>30 dias <b class="${v30.pct>=0?"up":"dn"}">${pctTxt(v30.pct)}</b></span>`:""}${vAll?`<span>Desde ${fmtD(s[0][0])} <b class="${vAll.pct>=0?"up":"dn"}">${pctTxt(vAll.pct)}</b></span>`:""}</div><div style="font-size:12px;color:var(--ink-soft)">Mín. ${brl(mn)} · Máx. ${brl(mx)} no período</div>`; })()}
+        <div class="f"><b>Raridade</b><span>${rarIcon(c.r)}${R.nome} <a href="#" style="font-size:12px" onclick="openGuia('${c.r}');return false">ver guia</a><div style="margin-top:6px">${rarCrop(c)}</div></span>
+          <b>Versões</b><span>${vs.map(v=>VER[v]).join(", ")}${vs.length===1?" (única)":""}</span>
+          ${c.promo?`<b>Onde vem</b><span>${c.origem}</span>`:""}
+          <b>Ilustrador</b><span>veja na carta (canto inferior esquerdo)</span></div>
+        <h3 style="margin:4px 0 0;font-size:14px">Marcar na minha coleção</h3>
+        <div class="vers">${vers}</div>
+      </div>
+      <div class="explain">
+        <div><h3>Como reconhecer</h3><p style="margin:0">${R.expl}</p></div>
+        <div class="tip"><h3>Como guardar: ${p.n}</h3><p style="margin:0">${p.t}</p></div>
+        <div><h3>Minhas anotações</h3><textarea id="note" placeholder="Condição, onde comprou, quanto pagou…">${cur().notes[c.n]||""}</textarea></div>
+      </div>
+    </div>`;
+  $("#panel img").onerror=imgFallback;
+  { const pimg=$("#panel .body img"); if(pimg){ pimg.title="Clique para ampliar"; pimg.onclick=()=>abrirZoom(pimg.currentSrc||pimg.src, c.nome+" · "+c.num); } }
+  $("#panel .x").onclick=closePanel;
+  bindQty($("#panel"));
+  $("#note").oninput=e=>{ cur().notes[c.n]=e.target.value; save(); };
+  $("#panel").classList.add("open"); $("#veil").classList.add("open");
+}
+function closePanel(){ $("#panel").classList.remove("open"); $("#veil").classList.remove("open"); panelKey=null; }
+$("#veil").onclick=closePanel;
+
+let tt; function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),1400); }
+
+/* ===================== visual tenho/falta ===================== */
+const VIS_KEY="fichario_visual", visSel=document.getElementById("visual");
+function aplicarVisual(v){ document.body.classList.remove("vis-dourado","vis-verdeouro"); document.body.classList.add("vis-"+v); }
+{ const salvo=localStorage.getItem(VIS_KEY); visSel.value = (salvo==="dourado"||salvo==="verdeouro") ? salvo : "verdeouro"; } aplicarVisual(visSel.value);
+visSel.onchange=()=>{ localStorage.setItem(VIS_KEY,visSel.value); aplicarVisual(visSel.value); toast(visSel.options[visSel.selectedIndex].text); };
+
+/* ===================== zoom da carta ===================== */
+function abrirZoom(src,cap){ const z=document.getElementById("zoom"); z.querySelector("img").src=src; z.querySelector(".zcap").textContent=cap+" — clique na carta para ampliar mais · clique fora ou Esc para fechar"; z.classList.remove("big"); z.classList.add("open"); }
+document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.target.tagName==="IMG"){ z.classList.toggle("big"); if(z.classList.contains("big")) z.scrollTo({top:0}); return; } z.classList.remove("open","big"); };
+document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
+
+/* ===================== sincronização GitHub ===================== */
+const APP_VERSION="2026-10-03a";
+const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
+let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
+let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
+const ghHeaders=()=>({"Authorization":"Bearer "+gh.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"});
+const ghUrl=()=>`https://api.github.com/repos/${gh.repo}/contents/${gh.file}`;
+const b64enc=s=>btoa(unescape(encodeURIComponent(s))), b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,""))));
+async function ghGet(){ const r=await fetch(ghUrl()+"?t="+Date.now(),{headers:ghHeaders(),cache:"no-store"}); if(r.status===404){ ghSha=null; return null; } if(r.status===401) throw new Error("token inválido ou expirado (401)"); if(!r.ok) throw new Error("GitHub respondeu "+r.status); const j=await r.json(); ghSha=j.sha; return migrar(JSON.parse(b64dec(j.content))); }
+async function ghPut(obj){ const body={message:"fichário "+new Date().toLocaleString("pt-BR"),content:b64enc(JSON.stringify(obj))}; if(ghSha) body.sha=ghSha; const r=await fetch(ghUrl(),{method:"PUT",headers:{...ghHeaders(),"Content-Type":"application/json"},body:JSON.stringify(body)}); if(r.status===409||r.status===422) return false; if(r.status===401) throw new Error("token inválido ou expirado (401)"); if(!r.ok) throw new Error("GitHub respondeu "+r.status); const j=await r.json(); ghSha=j.content.sha; return true; }
+function ghMarkSynced(){ ghLastSync=Date.now(); localStorage.setItem(GH_LAST,ghLastSync); ghStatus="ok"; ghErro=""; syncUI(); saveUI(); }
+function adotarRemoto(R,origem){ state=R; localStorage.setItem(KEY,JSON.stringify(state)); fonteInicial=origem; loadSet(SETS[state.setAtual]?state.setAtual:setId); fillRar(); renderTabs(); render(); if(fsStatus==="on"||fsStatus==="server") fsWrite(); }
+function ghAgendar(){ if(!gh.token) return; window.dirtyGh=true; syncUI(); clearTimeout(ghTimer); ghTimer=setTimeout(ghPush,1500); }
+async function ghPull(){
+  if(!gh.token) return "off"; if(ghBusy) return "ocupado"; ghBusy=true; ghStatus="sync"; syncUI();
+  try{ const R=await ghGet();
+    if(!R){ const ok=await ghPut(state); ghBusy=false; if(ok) ghMarkSynced(); return ok?"criado":"erro"; }
+    const tL=state.updatedAt||0, tR=R.updatedAt||0;
+    if(tR>tL && JSON.stringify(state.sets)!==JSON.stringify(R.sets)){ adotarRemoto(R,"GitHub"); ghBusy=false; ghMarkSynced(); toast("Coleção atualizada a partir do outro aparelho"); return "baixado"; }
+    if(JSON.stringify(state.sets)===JSON.stringify(R.sets)){ ghBusy=false; ghMarkSynced(); return "igual"; }
+    const ok=await ghPut(state); ghBusy=false; if(ok){ ghMarkSynced(); return "enviado"; } ghStatus="conflito"; syncUI(); return "conflito";
+  }catch(e){ ghBusy=false; ghStatus= navigator.onLine? "erro":"offline"; ghErro=e.message; syncUI(); return "erro"; }
+}
+async function ghPush(){
+  if(!gh.token) return; if(ghBusy){ window.dirtyGh=true; return; } ghBusy=true; window.dirtyGh=false; ghStatus="sync"; syncUI();
+  try{ let ok=await ghPut(state);
+    if(!ok){ const R=await ghGet(); const tR=R?(R.updatedAt||0):0;
+      if(R && tR>(state.updatedAt||0) && JSON.stringify(R.sets)!==JSON.stringify(state.sets)){
+        const q=`Outro aparelho gravou depois deste.\n\nEste aparelho: ${new Date(state.updatedAt).toLocaleString("pt-BR")}\nGitHub:  ${new Date(tR).toLocaleString("pt-BR")}\n\nOK = manter o deste aparelho (sobrescreve o GitHub)\nCancelar = usar o do GitHub (descarta o daqui)`;
+        if(confirm(q)) ok=await ghPut(state); else { adotarRemoto(R,"GitHub"); ok=true; }
+      } else ok=await ghPut(state);
+    }
+    if(ok) ghMarkSynced(); else { ghStatus="erro"; ghErro="não foi possível gravar"; window.dirtyGh=true; syncUI(); }
+  }catch(e){ ghStatus= navigator.onLine? "erro":"offline"; ghErro=e.message; window.dirtyGh=true; syncUI(); saveUI(); }
+  finally{ ghBusy=false; if(window.dirtyGh && ghStatus!=="offline") setTimeout(ghPush,3000); }
+}
+function tempoAtras(ms){ if(!ms) return "nunca"; const m=Math.round((Date.now()-ms)/60000); if(m<1) return "agora"; if(m<60) return `há ${m} min`; const h=Math.round(m/60); if(h<24) return `há ${h} h`; const dd=Math.round(h/24); return `há ${dd} dia${dd>1?"s":""}`; }
+function precosInfo(){ if(!H||!H.atualizadoEm) return `<span class="warn">Preços: sem histórico</span>`; const d=H.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=14?"bad":(dias>=7?"warn":"ok"); return `Preços: <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"há 1 dia":"há "+dias+" dias"})</span>`; }
+function syncUI(){ const el=document.getElementById("syncbar"); if(!el) return;
+  let ghTxt; if(!gh.token) ghTxt=`GitHub: <span class="warn">não configurado</span> <button id="ghCfg">Configurar sincronização</button>`;
+  else { const st={ok:`<span class="ok">● sincronizado ${tempoAtras(ghLastSync)}</span>`, idle:`<span class="warn">○ aguardando sincronização</span>`, sync:`<span class="warn">↻ sincronizando…</span>`, offline:`<span class="bad">● sem conexão</span> — alterações guardadas aqui; sobem quando voltar o sinal`, erro:`<span class="bad">● erro: ${ghErro||"?"}</span>`, conflito:`<span class="bad">● conflito</span>`}[ghStatus]||ghStatus;
+    ghTxt=`GitHub: ${st}${window.dirtyGh&&ghStatus!=="sync"?' <span class="warn">(pendente)</span>':""} <button id="ghSync">Sincronizar agora</button> <button id="ghCfg" title="Token e repositório">⚙</button>`; }
+  el.innerHTML=`<span>${ghTxt}</span><span class="sep">|</span><span>${precosInfo()}</span><span class="sep">|</span><span>App <b>${APP_VERSION}</b> <button id="appReload" title="Buscar a versão mais nova do app e dos preços">Atualizar app</button></span>${HOSTED?"":`<span class="sep">|</span><span>${SERVER?"notebook (servidor local)":"arquivo local"}</span>`}`;
+  const a=document.getElementById("ghSync"); if(a) a.onclick=async()=>{ const r=await ghPull(); toast({baixado:"Atualizado a partir do GitHub",enviado:"Enviado ao GitHub",igual:"Já estava sincronizado",criado:"Coleção criada no GitHub",erro:"Erro: "+ghErro,conflito:"Conflito — veja a mensagem",ocupado:"Aguarde, sincronizando",off:"Configure o GitHub primeiro"}[r]||r); };
+  const c=document.getElementById("ghCfg"); if(c) c.onclick=openGhConfig;
+  const r=document.getElementById("appReload"); if(r) r.onclick=atualizarApp;
+}
+async function atualizarApp(){ toast("Buscando versão nova…"); try{ if("serviceWorker" in navigator){ const reg=await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch{} location.reload(); }
+function openGhConfig(){
+  $("#panel").innerHTML=`<div class="head"><h2>Sincronização via GitHub<small>A coleção fica no repositório privado <b>${gh.repo}</b>; iPhone e notebook leem e gravam o mesmo arquivo.</small></h2><button class="x" aria-label="Fechar">×</button></div>
+    <div class="pan">
+      <p style="font-size:13.5px;margin:0">Cole aqui o <b>token fine-grained</b> do GitHub (Settings → Developer settings → Personal access tokens → Fine-grained). Permissão necessária: <b>Contents: Read and write</b> no repositório <b>${gh.repo}</b>. O token fica guardado só neste navegador.</p>
+      <label style="font-size:13px">Token<br><input id="ghTok" type="password" autocomplete="off" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="github_pat_…" value="${gh.token?"••••••••":""}"></label>
+      <label style="font-size:13px">Repositório<br><input id="ghRepo" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px" value="${gh.repo}"></label>
+      <div class="actions"><button id="ghSave" style="background:var(--energy);border-color:var(--energy-deep);font-weight:800">Salvar e testar</button>${gh.token?'<button id="ghDel">Remover token deste aparelho</button>':""}</div>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0">Perdeu o aparelho? Revogue o token no GitHub e crie outro — a coleção continua segura no repositório.</p>
+    </div>`;
+  $("#panel .x").onclick=closePanel; $("#panel").classList.add("open"); $("#veil").classList.add("open");
+  $("#ghSave").onclick=async()=>{ const t=$("#ghTok").value.trim(); const rp=$("#ghRepo").value.trim(); if(t && t!=="••••••••") gh.token=t; gh.repo=rp||gh.repo; if(!gh.token){ toast("Cole o token"); return; } localStorage.setItem(GH_KEY,JSON.stringify(gh)); ghStatus="idle"; const r=await ghPull(); if(r==="erro"){ toast("Falhou: "+ghErro); } else { toast("Conectado ao GitHub ("+r+")"); closePanel(); } syncUI(); };
+  const del=$("#ghDel"); if(del) del.onclick=()=>{ if(confirm("Remover o token deste aparelho? A coleção no GitHub não é apagada.")){ gh.token=""; localStorage.setItem(GH_KEY,JSON.stringify(gh)); ghStatus="off"; closePanel(); syncUI(); saveUI(); } };
+}
+window.addEventListener("online",()=>{ if(window.dirtyGh) ghPush(); else ghPull(); });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && gh.token && !window.dirtyGh && Date.now()-ghLastSync>60000) ghPull(); });
+if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* ===================== início ===================== */
+loadSet(setId); fillRar(); renderTabs(); render(); fsInit(); syncUI(); setInterval(syncUI,30000); if(gh.token) ghPull();
+if(location.hash==="#guia") openGuia(); if(location.hash==="#precos") openPrecos(); if(location.hash) history.replaceState(null,"",location.pathname);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Fica fora do GitHub: imagens (direitos autorais), coleção (vai para o repositório privado), arquivos temporários e pessoais
+img/
+data/colecao.json
+data/colecao.js
+data/historico-precos.json
+data/historico-precos.js
+*.xlsx
+*.pdf
+*.b64
+_*.html
+_*.png
+placeholders_cofre.html
