@@ -1,12 +1,15 @@
-# Fica fora do GitHub: imagens (direitos autorais), coleção (vai para o repositório privado), arquivos temporários e pessoais
+# Fica fora do GitHub: imagens (direitos autorais), colecao (vai para o repositorio privado), arquivos temporarios e pessoais
 img/
-data/colecao.json
-data/colecao.js
+arquivos antigos/
+data/colecao*
 data/historico-precos.json
 data/historico-precos.js
 *.xlsx
 *.pdf
 *.b64
+*.jpeg
+*.jpg
+*.mp4
 _*.html
 _*.png
 placeholders_cofre.html
