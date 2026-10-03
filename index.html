@@ -219,6 +219,34 @@
   .zoom .zcap{color:#cfd5ee;font-weight:700;margin-top:10px;font-size:13px;text-align:center}
   .zoom.big .zcap{display:none}
   .panel .body img{cursor:zoom-in}
+  .mbtn{display:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12.5px;color:var(--ink)}
+  .mclose{display:none}
+  @media (max-width:700px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr;height:100vh;height:100dvh}
+    header{padding:8px 10px;gap:8px}
+    header h1{font-size:15px;width:100%} header h1 small{font-size:10px}
+    .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none} .tabs::-webkit-scrollbar{display:none}
+    .tabs button{padding:6px 9px;font-size:12px;white-space:nowrap;flex:none} .tabs button small{font-size:9px}
+    .search{flex:1;min-width:0;padding:6px 10px}
+    .mbtn{display:inline-flex;flex:none}
+    .ctl{display:none;width:100%;gap:5px} body.show-ctl .ctl{display:flex}
+    .ctl select,.ctl button{padding:6px 8px;font-size:12.5px}
+    .range input{width:54px}
+    .savestate{min-width:0;width:100%}
+    .syncbar{padding:4px 10px;font-size:11px;gap:5px} .syncbar button{padding:2px 6px;font-size:11px}
+    aside{display:none;border:0;max-height:none}
+    body.show-dash aside{display:block;position:fixed;inset:0;z-index:8;overflow:auto;background:#fff;padding:14px}
+    .mclose{display:block;position:sticky;top:0;background:#fff;padding:4px 0 8px;margin-bottom:6px;border-bottom:1px solid var(--line);z-index:1}
+    .mclose button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:6px 10px;font-weight:700}
+    main{padding:8px} .pagebar{margin-bottom:6px} .page{padding:8px;border-radius:10px} .page::before{display:none}
+    .grid{grid-template-columns:repeat(2,1fr);gap:8px;padding-left:0}
+    .slot{padding:5px 5px 6px;gap:4px} .slot .meta{font-size:11px} .rar{font-size:10px} .slot .rv{font-size:10px;padding:1px 6px}
+    .qty button{width:24px;height:24px;font-size:14px} .qty .n{min-width:44px;font-size:11px}
+    .pr{font-size:10px}
+    .panel{width:100%} .panel .body{grid-template-columns:1fr;gap:12px;padding:12px 14px 20px} .panel .head{padding:14px 14px 0} .panel h2{font-size:18px}
+    .pgdiv{font-size:11px}
+    .topo{right:12px;bottom:12px;padding:8px 12px}
+  }
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
   .toast.on{opacity:1}
 
@@ -238,6 +266,7 @@
     <div class="seg tabs" id="setSeg"></div>
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="q" placeholder="Buscar por nome ou número (ex.: Umbreon, 161, promo)" autocomplete="off"></label>
+    <button class="mbtn" id="mFiltros" title="Filtros, ordenação, visual">Filtros</button><button class="mbtn" id="mResumo" title="Progresso, valor e faltantes">Resumo</button>
     <div class="ctl">
       <div class="seg" id="modeSeg"><button data-m="base">Set base</button><button data-m="master" class="on">Master set</button></div>
       <select id="fRar"><option value="">Todas as raridades</option></select>
@@ -622,6 +651,7 @@ function renderDash(){
   const extras=(SET.versoesExtra||[]).map(v=>VER[v]).join(", ");
   const r=44, C=2*Math.PI*r;
   $("#dash").innerHTML=`
+    <div class="mclose"><button id="dashClose">✕ Fechar resumo</button></div>
     ${fsBlock()}
     <h2>${SET.nome} · ${mode==="base"?"set base":"master set"} · ${all.length} espaços (${SET.cartas.length} cartas${mode==="master"?" + reverse"+(extras?" + "+extras:""):""} + ${(SET.promos||[]).length} promos)</h2>
     <div class="ring">
@@ -645,6 +675,7 @@ function renderDash(){
       <button id="imp">Importar coleção de um arquivo</button>
       <button id="clr">Desmarcar tudo deste set</button>
     </div>`;
+  const dc=$("#dashClose"); if(dc) dc.onclick=()=>document.body.classList.remove("show-dash");
   const fc=$("#fsConn"); if(fc) fc.onclick=fsConnect; const fa=$("#fsAuth"); if(fa) fa.onclick=fsAuthorize; const fch=$("#fsChange"); if(fch) fch.onclick=fsConnect;
   $("#bars").onclick=e=>{ const b=e.target.closest(".bar"); if(!b) return; fRar.value = (fRar.value===b.dataset.r) ? "" : b.dataset.r; page=0; render(); document.querySelector("main").scrollTo({top:0}); toast(fRar.value? "Mostrando: "+RAR[fRar.value].nome : "Filtro de raridade limpo"); };
   $("#hRar").onclick=()=>openGuia(fRar.value||null);
@@ -789,7 +820,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-03a";
+const APP_VERSION="2026-10-03b";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -852,6 +883,9 @@ function openGhConfig(){
 window.addEventListener("online",()=>{ if(window.dirtyGh) ghPush(); else ghPull(); });
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && gh.token && !window.dirtyGh && Date.now()-ghLastSync>60000) ghPull(); });
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+$("#mFiltros").onclick=()=>{ document.body.classList.toggle("show-ctl"); document.body.classList.remove("show-dash"); };
+$("#mResumo").onclick=()=>{ document.body.classList.toggle("show-dash"); document.body.classList.remove("show-ctl"); };
 
 /* ===================== início ===================== */
 loadSet(setId); fillRar(); renderTabs(); render(); fsInit(); syncUI(); setInterval(syncUI,30000); if(gh.token) ghPull();
