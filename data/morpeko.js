@@ -3,7 +3,7 @@
 window.SET_MOR = {
   id: "MOR", codigo: "MORPEKO", nome: "Coleção Morpeko", bloco: "Coleção por Pokémon", idioma: "qualquer",
   lancamento: "15/11/2019", precosAtualizadosEm: "08/10/2026", precosFonte: "TCGplayer (US$ × 5,40)", totalBase: 46, totalCatalogo: 46,
-  semReverse: true,
+  semReverse: true, colunas: 2,
   imgRemota: "", imgLocal: "img/MOR/{file}.png", fontePrecos: "https://bulbapedia.bulbagarden.net/wiki/Morpeko_(TCG)",
   cartas: [
     [1,"Morpeko","PROMO","SWSH Promos","",15.77,"SWSH Promos · SWSH012","001_morpeko"],
