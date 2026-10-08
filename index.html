@@ -318,6 +318,7 @@
 <script src="data/megaevolucao.js"></script>
 <script src="data/celebracao-30-anos.js"></script>
 <script src="data/imagens-30C.js"></script>
+<script src="data/morpeko.js"></script>
 <script src="data/historico-precos-CRI.js"></script>
 <script src="data/historico-precos-PRE.js"></script>
 <script src="data/historico-precos-MEG.js"></script>
@@ -325,7 +326,7 @@
 <script src="data/colecao.js"></script>
 <script>
 /* ===================== registro de sets ===================== */
-const SET_IDS = ["CRI","PRE","MEG","30C"];                       // ordem das abas
+const SET_IDS = ["CRI","PRE","MEG","30C","MOR"];                       // ordem das abas
 const SETS = {}; for(const id of SET_IDS){ if(window["SET_"+id]) SETS[id]=window["SET_"+id]; }
 const dataLanc = s => { const m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(s.lancamento||""); return m? new Date(+m[3],+m[2]-1,+m[1]) : new Date(2100,0,1); };
 SET_IDS.sort((a,b)=> (SETS[a]&&SETS[b]) ? dataLanc(SETS[a])-dataLanc(SETS[b]) : 0);   // abas em ordem de lançamento
@@ -353,7 +354,14 @@ const RAR = {
        expl:"Duas estrelas douradas. Arte especial de página inteira, geralmente com textura. As cartas mais cobiçadas do set. Só holo."},
   HR: {nome:"Hiper Rara (dourada)", simbolo:"★★★", cor:"#ffd86b", versoes:["H"], dif:[4],
        expl:"Três estrelas douradas e carta inteira dourada. Versão dourada de Pokémon ex ou de Treinador/Energia. Só holo."},
-  PK: {nome:"Pikachu dos 30 artistas", simbolo:"★", cor:"#ffd86b", versoes:["H"], dif:[2],
+  V:  {nome:"Rara Holo V", simbolo:"★", cor:"#9fc5ff", versoes:["H"], dif:[2],
+       expl:"Pokémon V (era Espada e Escudo). Holo, sem reverse."},
+  VM: {nome:"Rara Holo VMAX", simbolo:"★★", cor:"#9fc5ff", versoes:["H"], dif:[3],
+       expl:"Pokémon VMAX (era Espada e Escudo). Holo, sem reverse."},
+  RB: {nome:"Rara Arco-íris", simbolo:"★★★", cor:"#ff9ad5", versoes:["H"], dif:[4],
+       expl:"Versão arco-íris (secreta) de VMAX. Só holo."},
+  SH: {nome:"Rara Brilhante (shiny)", simbolo:"★", cor:"#cfe8ff", versoes:["H"], dif:[3],
+       expl:"Pokémon na cor shiny, do Cofre Brilhante (Shining Fates). Só holo."},  PK: {nome:"Pikachu dos 30 artistas", simbolo:"★", cor:"#ffd86b", versoes:["H"], dif:[2],
        expl:"As 30 cartas de Pikachu (023 a 052), cada uma por um ilustrador diferente. Uma sai em todo booster. Símbolo de raridade próprio do set comemorativo; todas foil."},
   FR: {nome:"Rara Futurista", simbolo:"★★", cor:"#8fd3ff", versoes:["H"], dif:[4],
        expl:"Raridade nova, exclusiva dos 30 anos: Mewtwo ex 157 e Mew ex 158, arte de YOSHIROTTEN. São as chase do set. Só holo."},
@@ -615,7 +623,7 @@ function priceLine(s){
   if(hc){ const ds=Object.keys(hc.serie).sort(); const d=ds[ds.length-1]; const mn=hc.serie[d]; const mx=hc.max&&hc.max[d];
     let tr=""; if(ds.length>1){ const prev=hc.serie[ds[ds.length-2]]; if(prev){ const pc=(mn-prev)/prev*100; if(Math.abs(pc)>=0.5) tr=` <span class="${pc>0?"up":"dn"}">${pc>0?"▲":"▼"} ${Math.abs(pc).toLocaleString("pt-BR",{maximumFractionDigits:0})}%</span>`; } }
     return `<div class="pr">Menor <b>${brl(mn)}</b>${mx!=null?` · Maior ${brl(mx)}`:""}${tr}<br><span class="dt">Liga · ${fmtD(d)}</span></div>`; }
-  if(s.preco!=null) return `<div class="pr">Ref. <b>${brl(s.preco)}</b><br><span class="dt">Deck Certo · ${SET.precosAtualizadosEm}</span></div>`;
+  if(s.preco!=null) return `<div class="pr">Ref. <b>${brl(s.preco)}</b><br><span class="dt">${SET.precosFonte||"Deck Certo"} · ${SET.precosAtualizadosEm}</span></div>`;
   return `<div class="pr"><span class="dt">sem preço de referência</span></div>`;
 }
 function renderGrid(){
@@ -845,7 +853,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-08g";
+const APP_VERSION="2026-10-08h";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
