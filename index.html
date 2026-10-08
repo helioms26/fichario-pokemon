@@ -238,7 +238,7 @@
     header{padding:8px 10px;gap:8px}
     .app{grid-template-columns:minmax(0,1fr)} header{min-width:0;max-width:100vw;overflow:hidden}
     header h1{font-size:15px;width:100%;min-width:0} header h1 small{font-size:10px;white-space:normal}
-    #sort{flex:1;min-width:0;order:5} #fStat{flex:1.2;min-width:0;order:4;font-weight:800;border:2px solid var(--energy-deep);background:#fff8dc} .mbtn{order:3} .search{order:2} #mResumo{display:none}
+    #sort{flex:1;min-width:0;order:5} #fStat{flex:1.2;min-width:0;order:4;font-weight:800;border:2px solid var(--energy-deep);background:#fff8dc} .mbtn{order:3} .search{order:2} #mResumo{display:none} .mbar{display:inline}
     .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none} .tabs::-webkit-scrollbar{display:none}
     .tabs button{padding:6px 9px;font-size:12px;white-space:nowrap;flex:none} .tabs button small{font-size:9px}
     .search{flex:1;min-width:0;padding:6px 10px}
@@ -842,7 +842,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-08c";
+const APP_VERSION="2026-10-08d";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
