@@ -842,7 +842,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-08e";
+const APP_VERSION="2026-10-08f";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -882,7 +882,7 @@ function precosInfo(){ if(!H||!H.atualizadoEm) return `<span class="warn">Preço
 function syncUI(){ const el=document.getElementById("syncbar"); if(!el) return;
   let ghTxt; if(!gh.token) ghTxt=`GitHub: <span class="warn">não configurado</span> <button id="ghCfg">Configurar sincronização</button><span class="mbar"> <button id="mResumoBar" title="Progresso, valor e faltantes">Resumo</button></span>`;
   else { const st={ok:`<span class="ok">● sincronizado ${tempoAtras(ghLastSync)}</span>`, idle:`<span class="warn">○ aguardando sincronização</span>`, sync:`<span class="warn">↻ sincronizando…</span>`, offline:`<span class="bad">● sem conexão</span> — alterações guardadas aqui; sobem quando voltar o sinal`, erro:`<span class="bad">● erro: ${ghErro||"?"}</span>`, conflito:`<span class="bad">● conflito</span>`}[ghStatus]||ghStatus;
-    ghTxt=`GitHub: ${st}${window.dirtyGh&&ghStatus!=="sync"?' <span class="warn">(pendente)</span>':""} <button id="ghSync">Sincronizar agora</button> <button id="ghCfg" title="Token e repositório">⚙</button>`; }
+    ghTxt=`GitHub: ${st}${window.dirtyGh&&ghStatus!=="sync"?' <span class="warn">(pendente)</span>':""} <button id="ghSync">Sincronizar agora</button> <button id="ghCfg" title="Token e repositório">⚙</button><span class="mbar"> <button id="mResumoBar" title="Progresso, valor e faltantes">Resumo</button></span>`; }
   el.innerHTML=`<span>${ghTxt}</span><span class="sep">|</span><span>${precosInfo()}</span><span class="sep">|</span><span>App <b>${APP_VERSION}</b> <button id="appReload" title="Buscar a versão mais nova do app e dos preços">Atualizar app</button></span>${HOSTED?"":`<span class="sep">|</span><span>${SERVER?"notebook (servidor local)":"arquivo local"}</span>`}`;
   const a=document.getElementById("ghSync"); if(a) a.onclick=async()=>{ const r=await ghPull(); if(fsStatus==="on"||fsStatus==="server") await fsWrite(); toast({baixado:"Atualizado a partir do GitHub",enviado:"Enviado ao GitHub",igual:"Já estava sincronizado",criado:"Coleção criada no GitHub",erro:"Erro: "+ghErro,conflito:"Conflito — veja a mensagem",ocupado:"Aguarde, sincronizando",off:"Configure o GitHub primeiro"}[r]||r); };
   const c=document.getElementById("ghCfg"); if(c) c.onclick=openGhConfig;
