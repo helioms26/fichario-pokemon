@@ -219,6 +219,7 @@
   .zoom .zcap{color:#cfd5ee;font-weight:700;margin-top:10px;font-size:13px;text-align:center}
   .zoom.big .zcap{display:none}
   .panel .body img{cursor:zoom-in}
+  .hdrbtn{display:none}
   .mbtn{display:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12.5px;color:var(--ink)}
   .mclose{display:none}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
@@ -263,13 +264,18 @@
     .panel{width:100%} .panel .body{grid-template-columns:1fr;gap:12px;padding:12px 14px 20px} .panel .head{padding:14px 14px 0} .panel h2{font-size:18px}
     .pgdiv{font-size:11px}
     .topo{right:12px;bottom:12px;padding:8px 12px}
+    .hdrbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-weight:800;font-size:12.5px;color:var(--ink);margin-left:auto;flex:none}
+    header h1{display:flex;align-items:center;gap:10px;width:100%} header h1 .ttl{min-width:0;flex:1}
+    body.hdr-min header{padding:6px 10px;gap:0} body.hdr-min header h1{font-size:14px} body.hdr-min header h1 small{display:none}
+    body.hdr-min .tabs,body.hdr-min .search,body.hdr-min .mbtn,body.hdr-min #sort,body.hdr-min .ctl,body.hdr-min .syncbar{display:none!important}
+    body.hdr-min .app{grid-template-rows:auto 1fr}
   }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>Meu Fichário <small id="setTitle"></small></h1>
+    <h1><span class="ttl">Meu Fichário <small id="setTitle"></small></span><button class="hdrbtn" id="hdrToggle" title="Mostrar ou ocultar o cabeçalho">☰ Menu</button></h1>
     <div class="seg tabs" id="setSeg"></div>
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="q" placeholder="Buscar por nome ou número (ex.: Umbreon, 161, promo)" autocomplete="off"></label>
@@ -835,7 +841,7 @@ document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.targe
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-03f";
+const APP_VERSION="2026-10-08a";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -899,7 +905,9 @@ window.addEventListener("online",()=>{ if(window.dirtyGh) ghPush(); else ghPull(
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && gh.token && !window.dirtyGh && Date.now()-ghLastSync>60000) ghPull(); });
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
 
-$("#mFiltros").onclick=()=>{ document.body.classList.toggle("show-ctl"); document.body.classList.remove("show-dash"); };
+const HDR_KEY="fichario_hdr_min"; function setHdr(min){ document.body.classList.toggle("hdr-min",min); document.body.classList.remove("show-ctl","show-dash"); const b=$("#hdrToggle"); if(b) b.textContent= min? "☰ Menu" : "▲ Ocultar"; localStorage.setItem(HDR_KEY, min?"1":"0"); }
+$("#hdrToggle").onclick=()=>setHdr(!document.body.classList.contains("hdr-min"));
+if(matchMedia("(max-width:700px)").matches && localStorage.getItem(HDR_KEY)!=="0") setHdr(true);$("#mFiltros").onclick=()=>{ document.body.classList.toggle("show-ctl"); document.body.classList.remove("show-dash"); };
 $("#mResumo").onclick=()=>{ document.body.classList.toggle("show-dash"); document.body.classList.remove("show-ctl"); };
 
 /* ===================== início ===================== */
