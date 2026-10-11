@@ -274,6 +274,26 @@
     body.hdr-min .tabs,body.hdr-min .search,body.hdr-min .mbtn,body.hdr-min #sort,body.hdr-min .ctl,body.hdr-min .syncbar{display:none!important}
     body.hdr-min .app{grid-template-rows:auto 1fr}
   }
+  /* ---------- cofre ---------- */
+  .tabs button.cofre{background:#1c2440;color:#ffd75a}
+  .tabs button.cofre small{color:#c9cfe8}
+  .cf-tot{display:flex;gap:18px;flex-wrap:wrap;background:var(--paper);border-radius:10px;padding:10px 12px;margin-top:12px}
+  .cf-tot div{font-size:12.5px;color:var(--ink-soft)}
+  .cf-tot b{display:block;font-size:18px;color:var(--ink)}
+  .cf-item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px}
+  .cf-item h3{margin:0;font-size:16px;line-height:1.25}
+  .cf-item h3 small{display:block;font-size:12px;color:var(--ink-soft);font-weight:600;margin-top:2px}
+  .cf-tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:#1c2440;color:#ffd75a;margin:0 6px 4px 0;vertical-align:middle}
+  .cf-tag.lac{background:#1f6b3f;color:#fff}
+  .cf-row{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft)}
+  .cf-row b{display:block;font-size:15px;color:var(--ink)}
+  .cf-item small{font-size:12px;color:var(--ink-soft)}
+  .cf-item .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .cf-item .actions button,.cf-form .actions button{font-size:12.5px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .cf-form{display:grid;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:12px}
+  .cf-form label{display:grid;gap:2px;font-size:12.5px;color:var(--ink-soft)}
+  .cf-form input,.cf-form select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;color:var(--ink)}
+  .cf-up{color:#1f6b3f!important} .cf-dn{color:#8b1f1f!important}
 </style>
 </head>
 <body>
@@ -441,6 +461,7 @@ let fonteInicial="navegador";
   const q=`Este navegador tem marcações mais recentes que o arquivo da pasta.\n\nNavegador: ${nL} espaços (${new Date(tL).toLocaleString("pt-BR")})\nArquivo:   ${nF} espaços (${tF?new Date(tF).toLocaleString("pt-BR"):"sem data"})\n\nOK = usar as deste navegador (e gravar no arquivo)\nCancelar = usar as do arquivo`;
   if(!confirm(q)) usarArquivo(); else fonteInicial="navegador (mais recente)";
 })();
+if(window.COLECAO) pegarCofre(window.COLECAO);   // cofre: vale o mais recente (cofreAt)
 if(!state._seeded){ (state.sets.CRI ??= {owned:{},notes:{}}); state.sets.CRI.owned["95:H"]=1; state.sets.CRI.owned["99:H"]=1; state._seeded=true; localStorage.setItem(KEY, JSON.stringify(state)); }
 
 let fsTimer=null, dirty=false, lastSaved=null;
@@ -572,10 +593,10 @@ let mode=(state.mode==="base"?"base":"master"), page=0, filtered=[];
 const $ = s=>document.querySelector(s);
 const q=$("#q"), fRar=$("#fRar"), fStat=$("#fStat"), sort=$("#sort"), pMin=$("#pMin"), pMax=$("#pMax");
 function renderTabs(){ $("#setSeg").innerHTML=SET_IDS.filter(id=>SETS[id]).map(id=>{ const s=SETS[id]; const st=state.sets[id]||{owned:{}}; const n=Object.keys(st.owned||{}).length;
-  return `<button data-s="${id}" class="${id===setId?"on":""}">${s.nome}<small>${s.codigo} · ${(s.lancamento||"").slice(3)} · ${n} marcadas</small></button>`; }).join(""); }
+  return `<button data-s="${id}" class="${id===setId?"on":""}">${s.nome}<small>${s.codigo} · ${(s.lancamento||"").slice(3)} · ${n} marcadas</small></button>`; }).join("")+cofreTab(); }
 function fillRar(){ const keep=fRar.value; fRar.innerHTML='<option value="">Todas as raridades</option>'; for(const k of Object.keys(RAR)){ if(!CARDS.some(c=>c.r===k)) continue; const o=document.createElement("option"); o.value=k; o.textContent=RAR[k].nome; fRar.appendChild(o); } fRar.value = [...fRar.options].some(o=>o.value===keep)? keep : ""; }
 function switchSet(id){ if(!SETS[id]||id===setId) return; loadSet(id); state.setAtual=id; save(); fillRar(); renderTabs(); page=0; closePanel(); render(); document.querySelector("main").scrollTo({top:0}); toast("Fichário: "+SET.nome); }
-$("#setSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) switchSet(b.dataset.s); });
+$("#setSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; if(b.dataset.cofre) openCofre(); else switchSet(b.dataset.s); });
 [q,fRar,fStat,sort,pMin,pMax].forEach(el=>el.addEventListener("input",()=>{page=0;render();}));
 $("#modeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
   mode=b.dataset.m; state.mode=mode; save(); [...e.currentTarget.children].forEach(x=>x.classList.toggle("on",x===b)); page=0; render(); });
@@ -857,8 +878,64 @@ function abrirZoom(src,cap){ const z=document.getElementById("zoom"); z.querySel
 document.getElementById("zoom").onclick=e=>{ const z=e.currentTarget; if(e.target.tagName==="IMG"){ z.classList.toggle("big"); if(z.classList.contains("big")) z.scrollTo({top:0}); return; } z.classList.remove("open","big"); };
 document.addEventListener("keydown",e=>{ const z=document.getElementById("zoom"); if(e.key==="Escape" && z.classList.contains("open")){ z.classList.remove("open","big"); e.stopImmediatePropagation(); e.stopPropagation(); } }, true);
 
+/* ===================== cofre: lacrados e graduados (fora das coleções) ===================== */
+function cofreItens(){ return state.cofre || (state.cofre=[]); }
+function pegarCofre(src){ if(src && (src.cofreAt||0)>(state.cofreAt||0)){ state.cofre=src.cofre||[]; state.cofreAt=src.cofreAt; return true; } return false; }
+function salvarCofre(){ state.cofreAt=Date.now(); save(); renderTabs(); }
+function cofreTab(){ const it=state.cofre||[]; const pago=it.reduce((a,x)=>a+(+x.pago||0),0);
+  return `<button data-cofre="1" class="cofre" title="Lacrados e graduados guardados como investimento">🔒 Cofre<small>${it.length} ${it.length===1?"item":"itens"} · ${brl(pago)}</small></button>`; }
+const escH = v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pctC = p=>(p>0?"+":"")+p.toLocaleString("pt-BR",{maximumFractionDigits:0})+"%";
+const hojeISO = ()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const numBR = v=>{ v=String(v??"").trim().replace(/[R$\s]/g,""); if(!v) return null; if(v.includes(",")) v=v.replace(/\./g,"").replace(",","."); const n=parseFloat(v); return isNaN(n)? null : n; };
+const temRef = x=>x.ref!=null && x.ref!=="";
+function openCofre(editId){
+  const it=cofreItens();
+  const pago=it.reduce((a,x)=>a+(+x.pago||0),0);
+  const cr=it.filter(temRef), refTot=cr.reduce((a,x)=>a+(+x.ref),0), pagoCR=cr.reduce((a,x)=>a+(+x.pago||0),0);
+  const vT= pagoCR? (refTot-pagoCR)/pagoCR*100 : null;
+  const card=x=>{ const v=(temRef(x)&&+x.pago)? (x.ref-x.pago)/x.pago*100 : null;
+    const sub=[x.idioma, x.compra?"comprado em "+fmtD(x.compra):"", x.onde].filter(Boolean).map(escH).join(" · ");
+    return `<div class="cf-item"><h3><span class="cf-tag ${x.tipo==="Lacrado"?"lac":""}">${escH(x.tipo)}${x.nota?" · "+escH(x.nota):""}</span>${escH(x.nome)}<small>${sub}</small></h3>
+      <div class="cf-row"><span>Pago<b>${x.pago!=null&&x.pago!==""?brl(+x.pago):"—"}</b></span><span>Referência<b>${temRef(x)?brl(+x.ref):"—"}</b></span>${v!=null?`<span>Variação<b class="${v>=0?"cf-up":"cf-dn"}">${pctC(v)}</b></span>`:""}</div>
+      ${temRef(x)&&(x.refFonte||x.refData)?`<small>Ref.: ${escH(x.refFonte||"")}${x.refData?" · "+fmtD(x.refData):""}</small>`:(!temRef(x)?"<small>Sem referência de mercado ainda — use “Atualizar referência”.</small>":"")}
+      ${x.cert?`<small>Certificado: <a href="https://www.psacard.com/cert/${encodeURIComponent(x.cert)}" target="_blank" rel="noopener">PSA ${escH(x.cert)} ↗</a></small>`:""}
+      ${x.obs?`<small>${escH(x.obs)}</small>`:""}
+      <div class="actions"><button type="button" data-cf-ref="${escH(x.id)}">Atualizar referência</button><button type="button" data-cf-edit="${escH(x.id)}">Editar</button><button type="button" data-cf-del="${escH(x.id)}">Remover</button></div></div>`; };
+  const ed= editId? it.find(x=>x.id===editId) : null;
+  const f=(k,l,t="text",ex="")=>`<label>${l}<input name="${k}" type="${t}" ${ex} value="${escH(ed?ed[k]:"")}"></label>`;
+  const form=`<form class="cf-form" id="cfForm" data-id="${ed?escH(ed.id):""}"><b>${ed?"Editar: "+escH(ed.nome):"Adicionar item ao cofre"}</b>
+    <label>Tipo<select name="tipo">${["Graduado","Lacrado","Avulsa"].map(o=>`<option ${ed&&ed.tipo===o?"selected":""}>${o}</option>`).join("")}</select></label>
+    ${f("nome","Nome")}${f("nota","Nota / grau (ex.: PSA 10)")}${f("cert","Nº do certificado PSA (se graduado)")}${f("idioma","Idioma")}${f("compra","Data da compra","date")}${f("onde","Onde comprou")}${f("pago","Preço pago (R$)","text",'inputmode="decimal"')}${f("ref","Referência de mercado (R$)","text",'inputmode="decimal"')}${f("refFonte","Fonte da referência")}${f("refData","Data da referência","date")}${f("obs","Observação")}
+    <div class="actions"><button type="submit" class="btns">${ed?"Salvar alterações":"Adicionar ao cofre"}</button>${ed?'<button type="button" id="cfCancel">Cancelar</button>':""}</div></form>`;
+  $("#panel").innerHTML=`<div class="head"><h2>🔒 Cofre<small>lacrados e graduados, separados das coleções · valores em R$</small></h2><button class="x" aria-label="Fechar">×</button></div>
+    <div class="pan"><div class="cf-tot"><div>Itens<b>${it.length}</b></div><div>Total pago<b>${brl(pago)}</b></div><div>Referência<b>${cr.length?brl(refTot):"—"}</b>${cr.length&&cr.length<it.length?`<small>(${cr.length} de ${it.length} itens)</small>`:""}</div>${vT!=null?`<div>Variação<b class="${vT>=0?"cf-up":"cf-dn"}">${pctC(vT)}</b></div>`:""}</div>
+    ${it.length? it.map(card).join("") : "<p>Nada no cofre ainda.</p>"}
+    ${form}</div>`;
+  $("#panel .x").onclick=closePanel; $("#panel").classList.add("open"); $("#veil").classList.add("open"); panelKey=null;
+  if(editId) setTimeout(()=>$("#cfForm").scrollIntoView({block:"start",behavior:"smooth"}),50);
+}
+$("#panel").addEventListener("click",e=>{ const t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.cfDel){ const x=cofreItens().find(i=>i.id===t.dataset.cfDel); if(x && confirm(`Remover "${x.nome}" do cofre?`)){ state.cofre=cofreItens().filter(i=>i!==x); salvarCofre(); openCofre(); toast("Removido do cofre"); } }
+  else if(t.dataset.cfEdit){ openCofre(t.dataset.cfEdit); }
+  else if(t.dataset.cfRef){ const x=cofreItens().find(i=>i.id===t.dataset.cfRef); if(!x) return;
+    const v=prompt(`Referência de mercado de "${x.nome}" hoje (R$):`, temRef(x)? String(x.ref).replace(".",",") : ""); if(v==null) return; const n=numBR(v); if(n==null){ toast("Valor inválido"); return; }
+    const fonte=prompt("Fonte da referência (ex.: menor PSA 10 na LigaPokémon):", x.refFonte||""); if(fonte==null) return;
+    x.ref=n; x.refFonte=fonte; x.refData=hojeISO(); (x.refHist ??= []).push([x.refData,n]); salvarCofre(); openCofre(); toast("Referência atualizada"); }
+  else if(t.id==="cfCancel"){ openCofre(); }
+});
+$("#panel").addEventListener("submit",e=>{ if(e.target.id!=="cfForm") return; e.preventDefault();
+  const fd=Object.fromEntries(new FormData(e.target)); for(const k in fd) fd[k]=String(fd[k]).trim();
+  if(!fd.nome){ toast("Dê um nome ao item"); return; }
+  fd.pago=numBR(fd.pago); fd.ref=numBR(fd.ref); if(fd.ref!=null && !fd.refData) fd.refData=hojeISO();
+  const id=e.target.dataset.id;
+  if(id){ const x=cofreItens().find(i=>i.id===id); if(!x) return; if(fd.ref!=null && fd.ref!==x.ref) (x.refHist ??= []).push([fd.refData,fd.ref]); Object.assign(x,fd); toast("Item atualizado"); }
+  else { const x={id:"c"+Date.now().toString(36),...fd}; if(fd.ref!=null) x.refHist=[[fd.refData,fd.ref]]; cofreItens().push(x); toast("Adicionado ao cofre"); }
+  salvarCofre(); openCofre();
+});
+
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-08j";
+const APP_VERSION="2026-10-11a";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -868,15 +945,17 @@ const b64enc=s=>btoa(unescape(encodeURIComponent(s))), b64dec=s=>decodeURICompon
 async function ghGet(){ const r=await fetch(ghUrl()+"?t="+Date.now(),{headers:ghHeaders(),cache:"no-store"}); if(r.status===404){ ghSha=null; return null; } if(r.status===401) throw new Error("token inválido ou expirado (401)"); if(!r.ok) throw new Error("GitHub respondeu "+r.status); const j=await r.json(); ghSha=j.sha; return migrar(JSON.parse(b64dec(j.content))); }
 async function ghPut(obj){ const body={message:"fichário "+new Date().toLocaleString("pt-BR"),content:b64enc(JSON.stringify(obj))}; if(ghSha) body.sha=ghSha; const r=await fetch(ghUrl(),{method:"PUT",headers:{...ghHeaders(),"Content-Type":"application/json"},body:JSON.stringify(body)}); if(r.status===409||r.status===422) return false; if(r.status===401) throw new Error("token inválido ou expirado (401)"); if(!r.ok) throw new Error("GitHub respondeu "+r.status); const j=await r.json(); ghSha=j.content.sha; return true; }
 function ghMarkSynced(){ ghLastSync=Date.now(); localStorage.setItem(GH_LAST,ghLastSync); ghStatus="ok"; ghErro=""; syncUI(); saveUI(); }
-function adotarRemoto(R,origem){ state=R; localStorage.setItem(KEY,JSON.stringify(state)); fonteInicial=origem; loadSet(SETS[state.setAtual]?state.setAtual:setId); fillRar(); renderTabs(); render(); if(fsStatus==="on"||fsStatus==="server") fsWrite(); }
+function adotarRemoto(R,origem){ const cofreLocal=(state.cofreAt||0)>(R.cofreAt||0); if(cofreLocal){ R.cofre=state.cofre; R.cofreAt=state.cofreAt; } state=R; localStorage.setItem(KEY,JSON.stringify(state)); fonteInicial=origem; loadSet(SETS[state.setAtual]?state.setAtual:setId); fillRar(); renderTabs(); render(); if(fsStatus==="on"||fsStatus==="server") fsWrite(); return cofreLocal; }
 function ghAgendar(){ if(!gh.token) return; window.dirtyGh=true; syncUI(); clearTimeout(ghTimer); ghTimer=setTimeout(ghPush,1500); }
 async function ghPull(){
   if(!gh.token) return "off"; if(ghBusy) return "ocupado"; ghBusy=true; ghStatus="sync"; syncUI();
   try{ const R=await ghGet();
     if(!R){ const ok=await ghPut(state); ghBusy=false; if(ok) ghMarkSynced(); return ok?"criado":"erro"; }
     const tL=state.updatedAt||0, tR=R.updatedAt||0;
-    if(tR>tL && JSON.stringify(state.sets)!==JSON.stringify(R.sets)){ adotarRemoto(R,"GitHub"); ghBusy=false; ghMarkSynced(); toast("Coleção atualizada a partir do outro aparelho"); return "baixado"; }
-    if(JSON.stringify(state.sets)===JSON.stringify(R.sets)){ ghBusy=false; ghMarkSynced(); return "igual"; }
+    if(tR>tL && JSON.stringify(state.sets)!==JSON.stringify(R.sets)){ const sub=adotarRemoto(R,"GitHub"); if(sub) await ghPut(state); ghBusy=false; ghMarkSynced(); toast("Coleção atualizada a partir do outro aparelho"); return "baixado"; }
+    const veio=pegarCofre(R), subir=(state.cofreAt||0)>(R.cofreAt||0);
+    if(veio){ localStorage.setItem(KEY,JSON.stringify(state)); if(fsStatus==="on"||fsStatus==="server") fsWrite(); renderTabs(); }
+    if(JSON.stringify(state.sets)===JSON.stringify(R.sets) && !subir){ ghBusy=false; ghMarkSynced(); return "igual"; }
     const ok=await ghPut(state); ghBusy=false; if(ok){ ghMarkSynced(); return "enviado"; } ghStatus="conflito"; syncUI(); return "conflito";
   }catch(e){ ghBusy=false; ghStatus= navigator.onLine? "erro":"offline"; ghErro=e.message; syncUI(); return "erro"; }
 }
@@ -886,8 +965,8 @@ async function ghPush(){
     if(!ok){ const R=await ghGet(); const tR=R?(R.updatedAt||0):0;
       if(R && tR>(state.updatedAt||0) && JSON.stringify(R.sets)!==JSON.stringify(state.sets)){
         const q=`Outro aparelho gravou depois deste.\n\nEste aparelho: ${new Date(state.updatedAt).toLocaleString("pt-BR")}\nGitHub:  ${new Date(tR).toLocaleString("pt-BR")}\n\nOK = manter o deste aparelho (sobrescreve o GitHub)\nCancelar = usar o do GitHub (descarta o daqui)`;
-        if(confirm(q)) ok=await ghPut(state); else { adotarRemoto(R,"GitHub"); ok=true; }
-      } else ok=await ghPut(state);
+        if(confirm(q)){ pegarCofre(R); ok=await ghPut(state); } else { const sub=adotarRemoto(R,"GitHub"); ok= sub? await ghPut(state) : true; }
+      } else { pegarCofre(R); ok=await ghPut(state); }
     }
     if(ok) ghMarkSynced(); else { ghStatus="erro"; ghErro="não foi possível gravar"; window.dirtyGh=true; syncUI(); }
   }catch(e){ ghStatus= navigator.onLine? "erro":"offline"; ghErro=e.message; window.dirtyGh=true; syncUI(); saveUI(); }
