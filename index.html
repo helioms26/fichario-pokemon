@@ -182,6 +182,22 @@
   .links{display:grid;gap:4px;margin-top:8px}
   .lk{display:inline-block;font-size:13px;color:#2b4bb4;text-decoration:none;border:1px solid #c9d2f0;border-radius:8px;padding:6px 10px;text-align:center}
   .lk:hover{background:#eef2ff}
+  button.lk{background:#fff;font:inherit;font-size:13px;cursor:pointer;width:100%}
+  #printArea{display:none}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body.printing > *:not(#printArea){display:none!important}
+    body.printing{background:#fff!important;margin:0!important;padding:0!important;min-height:0!important}
+    body.printing #printArea{display:block!important}
+    #printArea .pgrid{display:flex;gap:10mm;flex-wrap:wrap;font-family:"Segoe UI",Arial,sans-serif;color:#222}
+    #printArea .pcard{width:63mm;height:88mm;border:0.3mm dashed #999;border-radius:2.5mm;overflow:hidden;position:relative;break-inside:avoid;background:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printArea .pcard img{width:63mm;height:88mm;object-fit:cover;display:block}
+    #printArea .ptag{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.78);color:#ffd75a;font-weight:800;font-size:9pt;text-align:center;padding:1.5mm 0;letter-spacing:.05em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printArea .ptag span{color:#eee;font-weight:600;font-size:7pt;display:block;letter-spacing:0}
+    #printArea .pverso{width:63mm;height:88mm;border:0.3mm dashed #999;border-radius:2.5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:9pt;padding:4mm;box-sizing:border-box;break-inside:avoid}
+    #printArea .pverso b{font-size:11pt;display:block;margin-bottom:2mm}
+    #printArea .pverso small{color:#666;font-size:8pt;display:block;margin-top:3mm}
+  }
   textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;min-height:60px;resize:vertical}
   .chart{width:100%;height:auto;display:block}
   .chart .ax{font-size:10px;fill:#7b809a}
@@ -834,7 +850,7 @@ function openPanel(s){
   $("#panel").innerHTML=`
     <div class="head"><h2>${c.nome}<small>${c.num} · ${SET.nome}${c.cat?" · "+c.cat:""}${c.tipo?" · "+c.tipo:""} ${(SET.id==="30C"&&c.r==="PK"&&c.n>=23&&c.n<=52)?" · ★ Pikachu "+String(c.n-22).padStart(2,"0")+"/30":""}</small></h2><button class="x" aria-label="Fechar">×</button></div>
     <div class="body">
-      <div><img alt="${c.nome}" src="${imgLocal(c)}" data-remote="${imgRemote(c)}"><div class="links"><a class="lk" target="_blank" rel="noopener" href="${cartinhaUrl(c)}">Ver no cartinha.gg</a><a class="lk" target="_blank" rel="noopener" href="${ligaUrl(c)}">Buscar no LigaPokémon</a></div></div>
+      <div><img alt="${c.nome}" src="${imgLocal(c)}" data-remote="${imgRemote(c)}"><div class="links"><a class="lk" target="_blank" rel="noopener" href="${cartinhaUrl(c)}">Ver no cartinha.gg</a><a class="lk" target="_blank" rel="noopener" href="${ligaUrl(c)}">Buscar no LigaPokémon</a><button type="button" class="lk lk-print" onclick="imprimirPlaceholder()">🖨️ Imprimir (placeholder do cofre)</button></div></div>
       <div class="facts">
         <div class="price">${c.promo?"sem preço de referência":brl(c.preco)} <small>${c.promo?"promo · fora da fonte de preços":"menor preço na Liga · "+SET.precosAtualizadosEm}</small></div>
         ${(()=>{ const hc=H&&H.cartas[pad3(c.n)]; if(!hc||!hc.med) return ""; const ds=Object.keys(hc.med); if(!ds.length) return ""; const d=ds[ds.length-1];
@@ -934,8 +950,30 @@ $("#panel").addEventListener("submit",e=>{ if(e.target.id!=="cfForm") return; e.
   salvarCofre(); openCofre();
 });
 
+/* ===================== imprimir placeholder (cofre) ===================== */
+function imprimirPlaceholder(){
+  const c=panelCard && CARDS.find(x=>x.n===panelCard.n); if(!c) return;
+  const im=document.querySelector("#panel .body img");
+  let src=(im && im.naturalWidth && (im.currentSrc||im.src)) || imgRemote(c) || imgLocal(c);
+  src=new URL(src, location.href).href;
+  const R=RAR[c.r]||{nome:""};
+  const esc=t=>String(t??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+  const old=document.getElementById("printArea"); if(old) old.remove();
+  const a=document.createElement("div"); a.id="printArea";
+  a.innerHTML=`<div class="pgrid">
+    <div class="pcard"><img src="${esc(src)}" alt="${esc(c.nome)}"><div class="ptag">NO COFRE<span>${esc(c.nome)} · ${esc(c.num)} · ${esc(SET.nome)}</span></div></div>
+    <div class="pverso"><b>${esc(c.nome)}</b>${esc(c.num)} · ${esc(SET.nome)}${SET.codigo?" ("+esc(SET.codigo)+")":""}<br>${esc(R.nome)}<small>Original guardada na caixa vedada<br>sleeve dupla + toploader</small></div>
+  </div>`;
+  document.body.appendChild(a); document.body.classList.add("printing");
+  const fim=()=>{ document.body.classList.remove("printing"); window.removeEventListener("afterprint",fim); };
+  window.addEventListener("afterprint",fim);
+  const go=()=>setTimeout(()=>window.print(),80);
+  const img=a.querySelector("img"); if(img.complete && img.naturalWidth) go(); else { img.onload=go; img.onerror=go; }
+  if(typeof toast==="function") toast("Imprima em escala 100% e recorte pelo tracejado");
+}
+
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-11a";
+const APP_VERSION="2026-10-14a";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
