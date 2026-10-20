@@ -357,6 +357,8 @@
 <script src="data/celebracao-30-anos.js"></script>
 <script src="data/imagens-30C.js"></script>
 <script src="data/morpeko.js"></script>
+<script src="data/lorcana-2-floodborn.js"></script>
+<script src="data/lorcana-10-whispers.js"></script>
 <script src="data/historico-precos-CRI.js"></script>
 <script src="data/historico-precos-PRE.js"></script>
 <script src="data/historico-precos-MEG.js"></script>
@@ -364,10 +366,10 @@
 <script src="data/colecao.js"></script>
 <script>
 /* ===================== registro de sets ===================== */
-const SET_IDS = ["CRI","PRE","MEG","30C","MOR"];                       // ordem das abas
+const SET_IDS = ["CRI","PRE","MEG","30C","MOR","LO2","LO10"];                       // ordem das abas
 const SETS = {}; for(const id of SET_IDS){ if(window["SET_"+id]) SETS[id]=window["SET_"+id]; }
 const dataLanc = s => { const m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(s.lancamento||""); return m? new Date(+m[3],+m[2]-1,+m[1]) : new Date(2100,0,1); };
-SET_IDS.sort((a,b)=> (SETS[a]&&SETS[b]) ? dataLanc(SETS[a])-dataLanc(SETS[b]) : 0);   // abas em ordem de lançamento
+SET_IDS.sort((a,b)=> (SETS[a]&&SETS[b]) ? ((SETS[a].jogo==="lorcana")-(SETS[b].jogo==="lorcana")) || dataLanc(SETS[a])-dataLanc(SETS[b]) : 0);   // Pokémon primeiro, Lorcana no fim   // abas em ordem de lançamento
 if(window.HISTORICO && !window.HISTORICO_CRI) window.HISTORICO_CRI=window.HISTORICO;   // compatibilidade com o arquivo antigo
 const CARTINHA_PROMO = {CRI:"mep", PRE:"svp", MEG:"mep"};
 const EXEMPLOS = {CRI:{C:1,U:9,R:10,RR:22,UR:100,IR:95,SIR:116,MAR:122,PROMO:1078}};    // carta de exemplo por raridade (recorte do guia)
@@ -407,15 +409,23 @@ const RAR = {
        expl:"Reimpressão de uma carta histórica com a numeração original e o selo dos 30 anos. Vem em um pacote próprio (Classic Collection), não nos boosters comuns. Todas foil."},
   EN: {nome:"Energia Básica foil", simbolo:"●", cor:"#c9cfe8", versoes:["H"], dif:[1],
        expl:"Energias Básicas com arte própria dos 30 anos, foil, uma por booster. Numeração da série MEE."},
+  LC: {nome:"Common (Lorcana)", simbolo:"●", cor:"#c9cfe8", versoes:["N","FO"], dif:[1,2], expl:"Disney Lorcana · comum. Várias por booster. Existe também em foil (brilho na carta toda), com o mesmo número."},
+  LU: {nome:"Uncommon (Lorcana)", simbolo:"◆", cor:"#c9cfe8", versoes:["N","FO"], dif:[1,2], expl:"Disney Lorcana · incomum. Existe também em foil, mesmo número."},
+  LR: {nome:"Rare (Lorcana)", simbolo:"★", cor:"#e5e8f5", versoes:["N","FO"], dif:[2,3], expl:"Disney Lorcana · rara. Existe também em foil, mesmo número."},
+  LSR:{nome:"Super Rare (Lorcana)", simbolo:"★★", cor:"#d7dcf4", versoes:["N","FO"], dif:[2,3], expl:"Disney Lorcana · super rara. Existe também em foil, mesmo número."},
+  LL: {nome:"Legendary (Lorcana)", simbolo:"★★★", cor:"#ffd86b", versoes:["N","FO"], dif:[3,4], expl:"Disney Lorcana · lendária, a raridade mais alta das cartas normais (cerca de 1 a cada poucos boosters). Existe também em foil."},
+  LEP:{nome:"Epic (Lorcana)", simbolo:"✦", cor:"#8fd3ff", versoes:["H"], dif:[4], expl:"Disney Lorcana · épica (raridade especial dos sets mais novos), numeração acima de 204. Sempre foil."},
+  LEN:{nome:"Enchanted (Lorcana)", simbolo:"✦✦", cor:"#ff9ad5", versoes:["H"], dif:[4], expl:"Disney Lorcana · encantada: arte estendida sem moldura, numeração acima de 204. Sempre foil. É a chase do set."},
+  LIC:{nome:"Iconic (Lorcana)", simbolo:"✦✦✦", cor:"#ffd86b", versoes:["H"], dif:[4], expl:"Disney Lorcana · icônica, a raridade mais difícil (poucas por set). Sempre foil."},
   PROMO:{nome:"Promo (estrela preta)", simbolo:"★", cor:"#e5e8f5", versoes:["H"], dif:[2],
        expl:"Carta promocional: no lugar do símbolo de raridade vem uma estrela preta com a palavra PROMO, e a numeração é da série de promos, não do set. Sai lacrada em produtos específicos (blister, box, coleção), nunca em booster. É holográfica."},
   MAR:{nome:"Mega Attack Rare (dourada)", simbolo:"★★★", cor:"#ffd86b", versoes:["H"], dif:[4],
        expl:"Carta dourada exclusiva do Mega ex mascote do set — uma só por set. A nomenclatura oficial desta raridade no bloco Megaevolução varia conforme a fonte (Mega Attack Rare / Hyper Rara); confira o símbolo impresso na própria carta."}
 };
-const VER = {N:"Normal", H:"Holo", RV:"Reverse foil", PB:"Padrão Poké Ball", MB:"Padrão Master Ball"};
-const VER_DIF = {RV:1, PB:2, MB:3};   // acréscimo de dificuldade por versão
+const VER = {N:"Normal", H:"Holo", FO:"Foil", RV:"Reverse foil", PB:"Padrão Poké Ball", MB:"Padrão Master Ball"};
+const VER_DIF = {FO:1, RV:1, PB:2, MB:3};   // acréscimo de dificuldade por versão
 const DIF = {1:"Fácil",2:"Média",3:"Difícil",4:"Muito difícil"};
-const RAR_LEGENDA = {C:"círculo preto", U:"losango preto", R:"estrela preta", RR:"duas estrelas pretas", ACE:"duas estrelas rosa (magenta)", UR:"duas estrelas prateadas", IR:"uma estrela dourada", SIR:"duas estrelas douradas", HR:"três estrelas douradas", PK:"estrela do set comemorativo", FR:"símbolo próprio (Futurista)", CC:"símbolo da carta original + selo 30", EN:"energia foil", MAR:"três estrelas douradas (confira na carta)", PROMO:"estrela preta + PROMO"};
+const RAR_LEGENDA = {C:"círculo preto", U:"losango preto", R:"estrela preta", RR:"duas estrelas pretas", ACE:"duas estrelas rosa (magenta)", UR:"duas estrelas prateadas", IR:"uma estrela dourada", SIR:"duas estrelas douradas", HR:"três estrelas douradas", PK:"estrela do set comemorativo", FR:"símbolo próprio (Futurista)", CC:"símbolo da carta original + selo 30", EN:"energia foil", MAR:"três estrelas douradas (confira na carta)", PROMO:"estrela preta + PROMO", LC:"símbolo de raridade no rodapé (comum)", LU:"símbolo de raridade no rodapé (incomum)", LR:"símbolo de raridade no rodapé (rara)", LSR:"símbolo de raridade no rodapé (super rara)", LL:"símbolo de raridade no rodapé (lendária)", LEP:"símbolo de raridade no rodapé (épica)", LEN:"símbolo de raridade no rodapé (encantada)", LIC:"símbolo de raridade no rodapé (icônica)"};
 function rarIcon(k){
   const star=(c)=>`<svg viewBox="0 0 24 24"><path fill="${c}" d="M12 2.5l2.9 6.2 6.8.8-5 4.7 1.3 6.8L12 17.7 5.9 21l1.3-6.8-5-4.7 6.8-.8z"/></svg>`;
   const gold="#c9a227", silver="#9aa3ad", black="#111", pink="#e0409c";
@@ -423,6 +433,7 @@ function rarIcon(k){
     U:`<svg viewBox="0 0 24 24"><path fill="${black}" d="M12 3l9 9-9 9-9-9z"/></svg>`,
     R:star(black), RR:star(black)+star(black), ACE:star(pink)+star(pink), UR:star(silver)+star(silver), IR:star(gold), SIR:star(gold)+star(gold), HR:star(gold)+star(gold)+star(gold), MAR:star(gold)+star(gold)+star(gold),
     PK:star(gold), FR:star("#3aa7ff")+star("#3aa7ff"), CC:`<svg viewBox="0 0 24 24"><path fill="${black}" d="M12 3l9 9-9 9-9-9z"/></svg><span style="font-size:10px;font-weight:800">30</span>`, EN:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${black}"/></svg>`,
+    LC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${black}"/></svg>`, LU:`<svg viewBox="0 0 24 24"><path fill="${black}" d="M12 3l9 9-9 9-9-9z"/></svg>`, LR:star(black), LSR:star(silver)+star(silver), LL:star(gold)+star(gold)+star(gold), LEP:star("#3aa7ff"), LEN:star(pink)+star(pink), LIC:star(gold)+star(pink)+star(gold),
     PROMO:star(black)+`<span style="font-size:10px;font-weight:800;letter-spacing:.04em">PROMO</span>`};
   return `<span class="ric" title="${RAR_LEGENDA[k]}">${m[k]}</span>`;
 }
@@ -653,7 +664,7 @@ function applyFilters(){
 
 /* ===================== UI: álbum ===================== */
 function render(){ filtered=applyFilters(); renderGrid(); renderDash(); }
-function badge(s){ if(s.promo) return '<span class="rv promo">Promo</span>'; if(s.v==="RV") return '<span class="rv">Reverse foil</span>'; if(s.v==="PB") return '<span class="rv pb">Poké Ball</span>'; if(s.v==="MB") return '<span class="rv mb">Master Ball</span>'; return ""; }
+function badge(s){ if(s.promo) return '<span class="rv promo">Promo</span>'; if(s.v==="RV") return '<span class="rv">Reverse foil</span>'; if(s.v==="FO") return '<span class="rv">Foil</span>'; if(s.v==="PB") return '<span class="rv pb">Poké Ball</span>'; if(s.v==="MB") return '<span class="rv mb">Master Ball</span>'; return ""; }
 function precoMax(s){ if(s.v!=="N" && s.v!=="H") return null; const hc = H && H.cartas[pad3(s.n)]; if(!hc||!hc.max) return null; const ds=Object.keys(hc.serie).sort(); const d=ds[ds.length-1]; const v=hc.max[d]; return v==null? null : +v; }
 const pikachu30 = s => (SET.id==="30C" && s.r==="PK" && s.n>=23 && s.n<=52) ? `<div class="pk">★ Pikachu <b>${String(s.n-22).padStart(2,"0")}/30</b></div>` : "";
 function priceLine(s){
@@ -973,7 +984,7 @@ function imprimirPlaceholder(){
 }
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-14a";
+const APP_VERSION="2026-10-20a";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
