@@ -5,7 +5,7 @@ Fichário digital multi-set (PT-BR) com histórico de preços. As abas no topo t
 ## Sets
 - **Caos Ascendente (CRI)** — `data\caos-ascendente.js`: 122 cartas + 8 promos (074–081 Megaevolução Promos). Imagens em `img\CRI\`.
 - **Evoluções Prismáticas (PRE)** — `data\evolucoes-prismaticas.js`: 180 cartas (131 base + 49 secretas; inclui ACE SPEC e Hiper Rara) + 8 promos SVP 167–174 (Flareon/Vaporeon/Jolteon = blister quádruplo; Leafeon/Glaceon/Sylveon = blister triplo; Eevee = ETB). Master set inclui reverse foil e padrão Poké Ball para comuns/incomuns/raras (Master Ball ainda não modelado). Imagens em `img\PRE\`.
-- **Reinado Delta (DEL)** — `data\reinado-delta.js` (adicionado em 07/11/2026, lançamento BR 06/11/2026): 141 cartas (103 base + 38 secretas: 104–117 IR, 118–134 UR, 135–140 SIR, 141 Mega Rayquaza ex dourada) + 3 promos MEP 115–117 (Spritzee / Seel / Kyogre da ETB) — **promos a confirmar quando os produtos chegarem**. Master set = 237 espaços. Imagens em `img\DEL\` (URLs em `data\imagens-DEL.js`, que o iPhone usa). Raridade/tipo vieram da Bulbapedia e os nomes PT-BR/preço inicial do Deck Certo (estimativa pré-lançamento convertida do mercado japonês; 19 cartas sem preço = 0,00). A série Deck Certo já roda sozinha para DEL. **Liga: a edição ainda não está configurada** — no painel Atualizar preços da aba DEL, cole a URL da edição na Liga (tem `edid=`) uma vez; depois o fluxo do favorito funciona igual aos outros sets (o favorito foi atualizado em 07/11/2026 — arraste de novo para a barra).
+- **Reinado Delta (DEL)** — `data\reinado-delta.js` (adicionado em 07/11/2026, lançamento BR 06/11/2026): 141 cartas (103 base + 38 secretas: 104–117 IR, 118–134 UR, 135–140 SIR, 141 Mega Rayquaza ex dourada) + 3 promos MEP 115–117 (Spritzee / Seel / Kyogre da ETB) — **promos a confirmar quando os produtos chegarem**. Master set = 237 espaços. Imagens em `img\DEL\` (URLs em `data\imagens-DEL.js`, que o iPhone usa). Raridade/tipo vieram da Bulbapedia e os nomes PT-BR/preço inicial do Deck Certo (estimativa pré-lançamento convertida do mercado japonês; 19 cartas sem preço = 0,00). A série Deck Certo já roda sozinha para DEL. Liga: edição `edid=826`, sigla `DLR` (o fichário traduz DLR → DEL). Primeira coleta da Liga em 07/11/2026. O favorito "Enviar preços ao fichário" foi atualizado em 07/11/2026 — arraste de novo para a barra.
 - Para adicionar outro set: criar `data\<set>.js` no mesmo formato, incluir o `<script>` e o id em `SET_IDS` no index.html, baixar imagens para `img\<ID>\` e incluir a URL da fonte em `atualizar_precos.ps1` e `baixar_imagens.ps1`.
 - Histórico de preços: `data\historico-precos-<SET>.json` / `.js` (CRI também mantém `historico-precos.*` por compatibilidade).
 
@@ -58,7 +58,7 @@ Confira no cartinha.gg ou LigaPokémon antes de comprar/vender — o Deck Certo 
 
 ## Limitações conhecidas desta versão
 - Preço só da versão normal; reverse foil e promos sem referência (não entram nos totais).
-- Imagens das promos são da versão em inglês; a 081 (Mega Greninja ex) ainda não tem imagem pública.
+- Imagens das promos: desde 07/11/2026 são as versões PT-BR oficiais (pokemon.com), em `img\<SET>\P###_nome.webp`, com as URLs remotas em `data\imagens-promos.js` (para o iPhone). Exceções: Toxel 078 e Charmeleon 079 só em inglês; as 3 promos de Reinado Delta (115–117) ainda sem imagem publicada.
 - Tipos (Planta, Fogo…) foram inferidos do Pokémon — confira na carta se algo parecer errado.
 - O link do cartinha.gg abre a página da carta (me04-NNN / mep-NNN para promos); o da LigaPokémon é uma busca por nome e pode pedir ajuste lá.
 - Não há sincronização entre dispositivos além do backup JSON.
@@ -70,3 +70,5 @@ A LigaPokémon passou a bloquear a leitura automática (tela "Um momento…" do 
 3. Clique no link do painel para abrir a edição na Liga; com a lista carregada, clique no favorito. Ele envia a lista de preços para o servidor local (`POST /api/importar-precos?set=XXX`), que roda `atualizar_precos.ps1 -Set XXX -Entrada <json>` e acrescenta o ponto de hoje ao histórico. Repita para cada set (CRI, PRE, MEG, 30C).
 4. **Publicar para o iPhone** (no painel) envia os históricos novos ao GitHub Pages.
 Se o favorito não conseguir falar com o fichário, ele copia os preços para a área de transferência: cole no campo do fim do painel e clique em Gravar.
+
+**Atalho (desde 07/11/2026):** com a extensão Claude in Chrome ligada (exige "Allow network egress" em Settings > Capabilities), o Claude abre as 5 edições da Liga no seu Chrome, lê a lista de cada uma e roda `atualizar_precos.ps1 -Set X -Entrada data\_entrada-precos-X.json` — sem favorito e sem servidor. Basta pedir "atualiza os preços da Liga".

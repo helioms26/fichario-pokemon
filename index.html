@@ -363,6 +363,7 @@
 <script src="data/imagens-30C.js"></script>
 <script src="data/reinado-delta.js"></script>
 <script src="data/imagens-DEL.js"></script>
+<script src="data/imagens-promos.js"></script>
 <script src="data/morpeko.js"></script>
 <script src="data/lorcana-2-floodborn.js"></script>
 <script src="data/lorcana-10-whispers.js"></script>
@@ -602,7 +603,9 @@ function slotsFor(mode){
   return out;
 }
 const imgLocal = c=> (c.promo? SET.imgPromoLocal.replace("{n}",pad3(c.pn)) : SET.imgLocal.replace("{n}",pad3(c.n))).replace("{slug}",slug(c.nome)).replace("{file}",c.imgFile||"");
-const imgRemote= c=> { if(!c.promo && c.imgFile && window["IMG_"+SET.id] && window["IMG_"+SET.id][c.imgFile]) return window["IMG_"+SET.id][c.imgFile]; const u= c.promo? SET.imgPromoRemota : SET.imgRemota; return u? u.replace("{n}",pad3(c.promo?c.pn:c.n)) : ""; };
+const imgRemote= c=> { if(!c.promo && c.imgFile && window["IMG_"+SET.id] && window["IMG_"+SET.id][c.imgFile]) return window["IMG_"+SET.id][c.imgFile];
+  if(c.promo && window.IMG_PROMOS && IMG_PROMOS[SET.id] && IMG_PROMOS[SET.id][pad3(c.pn)]) return IMG_PROMOS[SET.id][pad3(c.pn)];   // promos em PT-BR (data/imagens-promos.js)
+  const u= c.promo? SET.imgPromoRemota : SET.imgRemota; return u? u.replace("{n}",pad3(c.promo?c.pn:c.n)) : ""; };
 const brl = v=> v==null? "—" : v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const ligaUrl = c=>"https://www.ligapokemon.com.br/?view=cards/search&card="+encodeURIComponent(c.promo? c.nome+" promo" : c.nome+" ed="+SET.id);
 const cartinhaUrl = c=> c.promo? (CARTINHA_PROMO[setId]? "https://cartinha.gg/cards/"+CARTINHA_PROMO[setId]+"-"+pad3(c.pn) : "https://cartinha.gg/search?q="+encodeURIComponent(c.nome)+"&game=pokemon") : (c.n<200? "https://cartinha.gg/cards/"+(SET.cartinhaSet||SET.codigo.toLowerCase())+"-"+pad3(c.n) : "https://cartinha.gg/search?q="+encodeURIComponent(c.nome)+"&game=pokemon");
@@ -1055,7 +1058,7 @@ function imprimirPlaceholder(){
 }
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-11-07a";
+const APP_VERSION="2026-11-07b";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
