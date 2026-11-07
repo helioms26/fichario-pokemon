@@ -1058,7 +1058,7 @@ function imprimirPlaceholder(){
 }
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-11-07b";
+const APP_VERSION="2026-11-07c";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -1096,8 +1096,9 @@ async function ghPush(){
   finally{ ghBusy=false; if(window.dirtyGh && ghStatus!=="offline") setTimeout(ghPush,3000); }
 }
 function tempoAtras(ms){ if(!ms) return "nunca"; const m=Math.round((Date.now()-ms)/60000); if(m<1) return "agora"; if(m<60) return `há ${m} min`; const h=Math.round(m/60); if(h<24) return `há ${h} h`; const dd=Math.round(h/24); return `há ${dd} dia${dd>1?"s":""}`; }
-function precosInfo(){ const dc=(()=>{ if(!HD||!HD.atualizadoEm) return ""; const d=HD.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=7?"bad":(dias>=3?"warn":"ok"); return ` <span class="sep">·</span> <span class="dc" title="${DC_NOTA}">Deck Certo <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"ontem":"há "+dias+" dias"})</span></span>`; })();
-  if(!H||!H.atualizadoEm) return `<span class="warn">Liga: sem histórico</span>${dc}`; const d=H.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=14?"bad":(dias>=7?"warn":"ok"); return `Liga: <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"há 1 dia":"há "+dias+" dias"})</span>${dc}`; }
+function diasDesde(iso){ const [y,m,dd]=iso.split("-").map(Number); const hoje=new Date(); const a=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()); const b=new Date(y,m-1,dd); return Math.max(0,Math.round((a-b)/86400000)); }   // dias de calendário, no fuso local (evita "há -1 dias")
+function precosInfo(){ const dc=(()=>{ if(!HD||!HD.atualizadoEm) return ""; const d=HD.atualizadoEm; const dias=diasDesde(d); const cls= dias>=7?"bad":(dias>=3?"warn":"ok"); return ` <span class="sep">·</span> <span class="dc" title="${DC_NOTA}">Deck Certo <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"ontem":"há "+dias+" dias"})</span></span>`; })();
+  if(!H||!H.atualizadoEm) return `<span class="warn">Liga: sem histórico</span>${dc}`; const d=H.atualizadoEm; const dias=diasDesde(d); const cls= dias>=14?"bad":(dias>=7?"warn":"ok"); return `Liga: <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"há 1 dia":"há "+dias+" dias"})</span>${dc}`; }
 function syncUI(){ const el=document.getElementById("syncbar"); if(!el) return;
   let ghTxt; if(!gh.token) ghTxt=`GitHub: <span class="warn">não configurado</span> <button id="ghCfg">Configurar sincronização</button><span class="mbar"> <button id="mResumoBar" title="Progresso, valor e faltantes">Resumo</button></span>`;
   else { const st={ok:`<span class="ok">● sincronizado ${tempoAtras(ghLastSync)}</span>`, idle:`<span class="warn">○ aguardando sincronização</span>`, sync:`<span class="warn">↻ sincronizando…</span>`, offline:`<span class="bad">● sem conexão</span> — alterações guardadas aqui; sobem quando voltar o sinal`, erro:`<span class="bad">● erro: ${ghErro||"?"}</span>`, conflito:`<span class="bad">● conflito</span>`}[ghStatus]||ghStatus;
