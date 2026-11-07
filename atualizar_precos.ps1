@@ -12,7 +12,7 @@ $base = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $utf8 = New-Object Text.UTF8Encoding($false)
 $chrome = @("C:\Program Files\Google\Chrome\Application\chrome.exe","C:\Program Files (x86)\Google\Chrome\Application\chrome.exe","C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $chrome) { throw "Não encontrei o Chrome/Edge para abrir a LigaPokémon." }
-$siglas = @{ "CRI"="edid=773 ed=CRI"; "PRE"="edid=649 ed=PRE"; "MEG"="edid=730 ed=MEG"; "30C"="edid=804 ed=30C"; "DEL"="edid=0 ed=DEL" }   # DEL: edid da Liga ainda não conhecido (0) — só o modo -Entrada funciona, que é o fluxo atual   # id da edição na Liga + sigla
+$siglas = @{ "CRI"="edid=773 ed=CRI"; "PRE"="edid=649 ed=PRE"; "MEG"="edid=730 ed=MEG"; "30C"="edid=804 ed=30C"; "DEL"="edid=826 ed=DLR" }   # DEL = Reinado Delta; na Liga a sigla é DLR   # id da edição na Liga + sigla
 $hoje = (Get-Date).ToString("yyyy-MM-dd")
 $lista = if ($Set -eq "ALL") { @($siglas.Keys | Sort-Object) } else { @($Set.ToUpper()) }
 foreach ($id in $lista) {

@@ -78,7 +78,7 @@ while ($listener.IsListening) {
     }
     if ($path -eq "/api/importar-precos" -and $method -eq "POST") {
       Add-Cors $ctx
-      $qs = [System.Web.HttpUtility]::ParseQueryString($ctx.Request.Url.Query); $setq = "$($qs["set"])".ToUpper()
+      $qs = [System.Web.HttpUtility]::ParseQueryString($ctx.Request.Url.Query); $setq = "$($qs["set"])".ToUpper(); if ($setq -eq "DLR") { $setq = "DEL" }
       if ($setq -notmatch "^[A-Z0-9]{3}$") { Send-Text $ctx 400 '{"ok":false,"erro":"informe ?set=CRI|PRE|MEG|30C|DEL"}'; continue }
       $body = Read-Body $ctx
       try { $arr = $body | ConvertFrom-Json } catch { Send-Text $ctx 400 '{"ok":false,"erro":"JSON inválido — copie o texto inteiro"}'; continue }
