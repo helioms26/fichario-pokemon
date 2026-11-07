@@ -157,6 +157,10 @@ window.SET_DEL = {
   // Promos da série Megaevolução Promos (MEP) que vêm nos produtos de Reinado Delta. Numeração da versão em inglês — CONFIRMAR quando as cartas chegarem
   // (previsão 13/11/2026): no Brasil o blister quádruplo e o triplo podem trazer promos diferentes das do blister americano. Sem preço de referência.
   promos: [
+    [111,"Masquerain","Planta","Pré-lançamento / Build & Battle Box de Reinado Delta (1 das 4 promos)"],
+    [112,"Magmortar","Fogo","Pré-lançamento / Build & Battle Box de Reinado Delta (1 das 4 promos)"],
+    [113,"Enamorus","Psíquico","Pré-lançamento / Build & Battle Box de Reinado Delta (1 das 4 promos)"],
+    [114,"Kommo-o","Dragão","Pré-lançamento / Build & Battle Box de Reinado Delta (1 das 4 promos)"],
     [115,"Spritzee","Fada","Blister simples (EUA) — provável promo de um dos blisters BR (confirmar)"],
     [116,"Seel","Água","Blister triplo (3 boosters) — a sua, confirmar"],
     [117,"Kyogre","Água","Coleção Treinador Avançado (ETB) — estilo Ilustração Rara; você tem 2 ETBs"]

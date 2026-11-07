@@ -44,5 +44,10 @@ window.IMG_PROMOS = {
   "109": "https://www.pokemon.com/static-assets/content-assets/cms2-pt-br/img/cards/full/MEP/MEP_PT-BR_109.png",
   "110": "https://www.pokemon.com/static-assets/content-assets/cms2-pt-br/img/cards/full/MEP/MEP_PT-BR_110.png"
  },
- "DEL": {}
+ "DEL": {
+  "111": "https://mcdn.pokemon.com/pokemon-prod/image/upload/v1/live/pcom-cms/static-assets/cms3/br/img/cards/full/MEP/MEP_PT-BR_111.png",
+  "112": "https://mcdn.pokemon.com/pokemon-prod/image/upload/v1/live/pcom-cms/static-assets/cms3/br/img/cards/full/MEP/MEP_PT-BR_112.png",
+  "113": "https://mcdn.pokemon.com/pokemon-prod/image/upload/v1/live/pcom-cms/static-assets/cms3/br/img/cards/full/MEP/MEP_PT-BR_113.png",
+  "114": "https://mcdn.pokemon.com/pokemon-prod/image/upload/v1/live/pcom-cms/static-assets/cms3/br/img/cards/full/MEP/MEP_PT-BR_114.png"
+ }
 };
