@@ -3,25 +3,38 @@
 # Grava data\historico-precos-<SET>.json (fonte da verdade) e .js (lido pelo fichário).
 #   serie = menor preço (piso) por data · med / max = preço médio e maior anunciado por data.
 # Pontos antigos nunca são apagados. O histórico anterior a 18/09/2026 veio do Deck Certo, que acompanhava o piso da Liga.
-param([string]$Set = "ALL")
+param([string]$Set = "ALL", [string]$Entrada = "")
+# -Entrada <arquivo.json>: usa o array "cardsjson" copiado da página da Liga aberta pelo usuário (via favorito "Enviar preços ao fichário"),
+#   em vez de abrir o Chrome oculto — a Liga passou a bloquear esse modo (tela "Um momento…" do Cloudflare) em out/2026.
+if ($Entrada -and $Set -eq "ALL") { throw "Com -Entrada é preciso informar -Set (CRI, PRE, MEG, 30C ou DEL)." }
 $ErrorActionPreference = "Stop"
 $base = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $utf8 = New-Object Text.UTF8Encoding($false)
 $chrome = @("C:\Program Files\Google\Chrome\Application\chrome.exe","C:\Program Files (x86)\Google\Chrome\Application\chrome.exe","C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $chrome) { throw "Não encontrei o Chrome/Edge para abrir a LigaPokémon." }
-$siglas = @{ "CRI"="edid=773 ed=CRI"; "PRE"="edid=649 ed=PRE"; "MEG"="edid=730 ed=MEG"; "30C"="edid=804 ed=30C" }   # id da edição na Liga + sigla
+$siglas = @{ "CRI"="edid=773 ed=CRI"; "PRE"="edid=649 ed=PRE"; "MEG"="edid=730 ed=MEG"; "30C"="edid=804 ed=30C"; "DEL"="edid=0 ed=DEL" }   # DEL: edid da Liga ainda não conhecido (0) — só o modo -Entrada funciona, que é o fluxo atual   # id da edição na Liga + sigla
 $hoje = (Get-Date).ToString("yyyy-MM-dd")
 $lista = if ($Set -eq "ALL") { @($siglas.Keys | Sort-Object) } else { @($Set.ToUpper()) }
 foreach ($id in $lista) {
   if (-not $siglas.ContainsKey($id)) { Write-Host "Set desconhecido: $id"; continue }
-  $url = "https://www.ligapokemon.com.br/?view=cards/search&card=" + [Uri]::EscapeDataString($siglas[$id])
-  Write-Host "[$id] abrindo LigaPokémon ($url) ..."
-  $prevEA=$ErrorActionPreference; $ErrorActionPreference="Continue"
-  $html = (cmd /c "`"$chrome`" --headless=new --disable-gpu --virtual-time-budget=20000 --dump-dom `"$url`" 2>nul") -join "`n"
-  $ErrorActionPreference=$prevEA
-  $m = [regex]::Match($html, 'var cardsjson = (\[[\s\S]*?\]);\s*')
-  if (-not $m.Success) { throw "[$id] não achei os dados na página da Liga (bloqueio ou mudança de layout)." }
-  $arr = $m.Groups[1].Value | ConvertFrom-Json
+  if ($Entrada) {
+    if (-not (Test-Path $Entrada)) { throw "[$id] arquivo de entrada não encontrado: $Entrada" }
+    Write-Host "[$id] lendo preços enviados da página da Liga ..."
+    $arr = Get-Content $Entrada -Raw -Encoding UTF8 | ConvertFrom-Json
+  } else {
+    $url = "https://www.ligapokemon.com.br/?view=cards/search&card=" + [Uri]::EscapeDataString($siglas[$id])
+    Write-Host "[$id] abrindo LigaPokémon ($url) ..."
+    $prevEA=$ErrorActionPreference; $ErrorActionPreference="Continue"
+    $html = (cmd /c "`"$chrome`" --headless=new --disable-gpu --virtual-time-budget=20000 --dump-dom `"$url`" 2>nul") -join "`n"
+    $ErrorActionPreference=$prevEA
+    $m = [regex]::Match($html, 'var cardsjson = (\[[\s\S]*?\]);\s*')
+    if (-not $m.Success) {
+      if ($html -match "Um momento|Just a moment") { throw "[$id] a LigaPokémon bloqueou a leitura automática (verificação 'Um momento…'). Use o botão Atualizar preços no fichário: você abre a página e o favorito 'Enviar preços ao fichário' grava aqui." }
+      throw "[$id] não achei os dados na página da Liga (bloqueio ou mudança de layout)."
+    }
+    $arr = $m.Groups[1].Value | ConvertFrom-Json
+  }
+  if (-not ($arr -is [array]) -or -not $arr[0].PSObject.Properties["sN"] -or -not $arr[0].PSObject.Properties["p1a"]) { throw "[$id] os dados não têm o formato esperado da Liga (sN/p1a)." }
   if ($arr.Count -lt 100) { throw "[$id] só vieram $($arr.Count) cartas." }
   $jsonPath = Join-Path $base "data\historico-precos-$id.json"; $jsPath = Join-Path $base "data\historico-precos-$id.js"
   $hist = [ordered]@{}; $origem = $null

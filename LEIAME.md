@@ -5,6 +5,7 @@ Fichário digital multi-set (PT-BR) com histórico de preços. As abas no topo t
 ## Sets
 - **Caos Ascendente (CRI)** — `data\caos-ascendente.js`: 122 cartas + 8 promos (074–081 Megaevolução Promos). Imagens em `img\CRI\`.
 - **Evoluções Prismáticas (PRE)** — `data\evolucoes-prismaticas.js`: 180 cartas (131 base + 49 secretas; inclui ACE SPEC e Hiper Rara) + 8 promos SVP 167–174 (Flareon/Vaporeon/Jolteon = blister quádruplo; Leafeon/Glaceon/Sylveon = blister triplo; Eevee = ETB). Master set inclui reverse foil e padrão Poké Ball para comuns/incomuns/raras (Master Ball ainda não modelado). Imagens em `img\PRE\`.
+- **Reinado Delta (DEL)** — `data\reinado-delta.js` (adicionado em 07/11/2026, lançamento BR 06/11/2026): 141 cartas (103 base + 38 secretas: 104–117 IR, 118–134 UR, 135–140 SIR, 141 Mega Rayquaza ex dourada) + 3 promos MEP 115–117 (Spritzee / Seel / Kyogre da ETB) — **promos a confirmar quando os produtos chegarem**. Master set = 237 espaços. Imagens em `img\DEL\` (URLs em `data\imagens-DEL.js`, que o iPhone usa). Raridade/tipo vieram da Bulbapedia e os nomes PT-BR/preço inicial do Deck Certo (estimativa pré-lançamento convertida do mercado japonês; 19 cartas sem preço = 0,00). A série Deck Certo já roda sozinha para DEL. **Liga: a edição ainda não está configurada** — no painel Atualizar preços da aba DEL, cole a URL da edição na Liga (tem `edid=`) uma vez; depois o fluxo do favorito funciona igual aos outros sets (o favorito foi atualizado em 07/11/2026 — arraste de novo para a barra).
 - Para adicionar outro set: criar `data\<set>.js` no mesmo formato, incluir o `<script>` e o id em `SET_IDS` no index.html, baixar imagens para `img\<ID>\` e incluir a URL da fonte em `atualizar_precos.ps1` e `baixar_imagens.ps1`.
 - Histórico de preços: `data\historico-precos-<SET>.json` / `.js` (CRI também mantém `historico-precos.*` por compatibilidade).
 
@@ -46,7 +47,12 @@ Ao abrir, o app compara os dois e usa o mais recente. O painel "Sincronização 
 O backup manual (Exportar JSON) continua disponível e é uma boa cópia extra.
 
 ## Atualizar preços
-Dois cliques em `Atualizar precos.cmd`. Ele baixa a galeria do Deck Certo (preço do dia + histórico diário que o site expõe), acrescenta ao `historico-precos.json` e imprime as maiores altas e quedas de 15 dias. O app usa o preço mais recente do histórico automaticamente; os preços em `caos-ascendente.js` são só o fallback.
+O fichário tem **duas séries de preço, separadas e rotuladas**:
+
+- **LigaPokémon** (`historico-precos-<SET>.*`) — a referência de negociação (é o que a Jamble e os vendedores usam). Desde out/2026 só entra via favorito "Enviar preços ao fichário" (ver abaixo), porque a Liga bloqueia leitura automática.
+- **Deck Certo** (`historico-precos-deckcerto-<SET>.*`, `window.HISTORICO_DC_<SET>`) — **estimativa automática**, sem intervenção: `atualizar_precos_deckcerto.ps1` roda sozinho (1) ao abrir o fichário pelo `Abrir Fichario.cmd`, se ainda não leu hoje, (2) pela tarefa diária do Windows criada uma única vez com `Agendar Deck Certo diario.cmd` (07:40; roda ao ligar o PC se perdeu o horário) e (3) pelo botão "Atualizar Deck Certo agora" no painel Atualizar preços. Nunca escreve nos arquivos da Liga. Medido em 17–18/09/2026 e 05–06/11/2026 contra a Liga e o cartinha.gg: fica ~13% abaixo do piso da Liga nos hits (SIR 1–7%, UR/IR 15–30%) e igual nas comuns — por isso o app mostra "estimativa" em amarelo e o botão vermelho **Ver na LigaPokémon ↗** em cada carta. Na 1ª execução no Windows o script reconstrói o histórico diário desde jul/2026 (o site expõe a série).
+
+`Atualizar precos.cmd` roda o Deck Certo na hora e lembra o fluxo da Liga. Os preços em `caos-ascendente.js` são só o fallback quando não há nenhuma série.
 Cadência: a cada 15 dias é seguro (a fonte mostra ~60 dias; rodar a cada 15 dá folga). Rodar mais vezes não atrapalha: pontos repetidos são ignorados.
 Confira no cartinha.gg ou LigaPokémon antes de comprar/vender — o Deck Certo é agregador, não vendedor.
 
@@ -56,3 +62,11 @@ Confira no cartinha.gg ou LigaPokémon antes de comprar/vender — o Deck Certo 
 - Tipos (Planta, Fogo…) foram inferidos do Pokémon — confira na carta se algo parecer errado.
 - O link do cartinha.gg abre a página da carta (me04-NNN / mep-NNN para promos); o da LigaPokémon é uma busca por nome e pode pedir ajuste lá.
 - Não há sincronização entre dispositivos além do backup JSON.
+
+## Atualizar preços (desde 02/11/2026)
+A LigaPokémon passou a bloquear a leitura automática (tela "Um momento…" do Cloudflare), então o Chrome oculto não funciona mais — nem pelo botão, nem pelo `Atualizar precos.cmd`. O fluxo agora é:
+1. Abra o fichário pelo `Abrir Fichario.cmd` (precisa do servidor local).
+2. Clique em **Atualizar preços**. Na primeira vez, arraste o botão **"📥 Enviar preços ao fichário"** para a barra de favoritos do Chrome.
+3. Clique no link do painel para abrir a edição na Liga; com a lista carregada, clique no favorito. Ele envia a lista de preços para o servidor local (`POST /api/importar-precos?set=XXX`), que roda `atualizar_precos.ps1 -Set XXX -Entrada <json>` e acrescenta o ponto de hoje ao histórico. Repita para cada set (CRI, PRE, MEG, 30C).
+4. **Publicar para o iPhone** (no painel) envia os históricos novos ao GitHub Pages.
+Se o favorito não conseguir falar com o fichário, ele copia os preços para a área de transferência: cole no campo do fim do painel e clique em Gravar.

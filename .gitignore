@@ -13,3 +13,5 @@ data/historico-precos.js
 _*.html
 _*.png
 placeholders_cofre.html
+data/_entrada*
+.chrome-liga/

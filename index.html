@@ -205,6 +205,11 @@
   .chart .ar{fill:url(#gA)}
   .chart .dot{fill:#e0a800}
   .chart .lnB{fill:none;stroke:#2b4bb4;stroke-width:2;stroke-linejoin:round}
+  .chart .lnDC{fill:none;stroke:#8a6d00;stroke-width:2;stroke-dasharray:4 3;stroke-linejoin:round}
+  .dc{color:#8a6d00}
+  .dcbox{font-size:13px;color:var(--ink-soft);margin-top:2px;padding:8px 10px;border:1px dashed #c9b26a;border-radius:8px;background:#fffbea}
+  .dcbox .dcnote{font-size:12px;margin-top:2px}
+  .lk-liga{background:#e3262d;color:#fff;border-color:#e3262d;font-weight:800}
   .pan{padding:0 20px 24px;display:grid;gap:16px}
   .pan .seg{margin-top:12px}
   .stat{display:flex;gap:18px;flex-wrap:wrap}
@@ -356,6 +361,8 @@
 <script src="data/megaevolucao.js"></script>
 <script src="data/celebracao-30-anos.js"></script>
 <script src="data/imagens-30C.js"></script>
+<script src="data/reinado-delta.js"></script>
+<script src="data/imagens-DEL.js"></script>
 <script src="data/morpeko.js"></script>
 <script src="data/lorcana-2-floodborn.js"></script>
 <script src="data/lorcana-10-whispers.js"></script>
@@ -363,15 +370,22 @@
 <script src="data/historico-precos-PRE.js"></script>
 <script src="data/historico-precos-MEG.js"></script>
 <script src="data/historico-precos-30C.js"></script>
+<script src="data/historico-precos-DEL.js"></script>
+<!-- Deck Certo: série automática (estimativa), separada da Liga -->
+<script src="data/historico-precos-deckcerto-CRI.js"></script>
+<script src="data/historico-precos-deckcerto-PRE.js"></script>
+<script src="data/historico-precos-deckcerto-MEG.js"></script>
+<script src="data/historico-precos-deckcerto-30C.js"></script>
+<script src="data/historico-precos-deckcerto-DEL.js"></script>
 <script src="data/colecao.js"></script>
 <script>
 /* ===================== registro de sets ===================== */
-const SET_IDS = ["CRI","PRE","MEG","30C","MOR","LO2","LO10"];                       // ordem das abas
+const SET_IDS = ["CRI","PRE","MEG","30C","DEL","MOR","LO2","LO10"];                       // ordem das abas
 const SETS = {}; for(const id of SET_IDS){ if(window["SET_"+id]) SETS[id]=window["SET_"+id]; }
 const dataLanc = s => { const m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(s.lancamento||""); return m? new Date(+m[3],+m[2]-1,+m[1]) : new Date(2100,0,1); };
 SET_IDS.sort((a,b)=> (SETS[a]&&SETS[b]) ? ((SETS[a].jogo==="lorcana")-(SETS[b].jogo==="lorcana")) || dataLanc(SETS[a])-dataLanc(SETS[b]) : 0);   // Pokémon primeiro, Lorcana no fim   // abas em ordem de lançamento
 if(window.HISTORICO && !window.HISTORICO_CRI) window.HISTORICO_CRI=window.HISTORICO;   // compatibilidade com o arquivo antigo
-const CARTINHA_PROMO = {CRI:"mep", PRE:"svp", MEG:"mep"};
+const CARTINHA_PROMO = {CRI:"mep", PRE:"svp", MEG:"mep", DEL:"mep"};
 const EXEMPLOS = {CRI:{C:1,U:9,R:10,RR:22,UR:100,IR:95,SIR:116,MAR:122,PROMO:1078}};    // carta de exemplo por raridade (recorte do guia)
 
 /* ===================== dicionários ===================== */
@@ -566,13 +580,13 @@ function fsBlock(){
 
 /* ===================== set atual e modelo ===================== */
 let setId = SETS[state.setAtual] ? state.setAtual : SET_IDS[0];
-let SET, H, CARDS, allDates;
+let SET, H, HD, CARDS, allDates;   // H = Liga (referência) · HD = Deck Certo (estimativa automática)
 const pad3 = n=>String(n).padStart(3,"0");
 const slug = s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
 const fmtD = d=>d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4);
 const addDays = (d,k)=>{ const x=new Date(d+"T12:00:00"); x.setDate(x.getDate()+k); return x.toISOString().slice(0,10); };
 function loadSet(id){
-  setId=id; SET=SETS[id]; H=window["HISTORICO_"+id]||null;
+  setId=id; SET=SETS[id]; H=window["HISTORICO_"+id]||null; HD=window["HISTORICO_DC_"+id]||null;
   const tb=pad3(SET.totalBase);
   CARDS = SET.cartas.map(([n,nome,r,tipo,cat,preco,numLabel,imgFile])=>({n,nome,r,tipo,cat,preco,num: numLabel||(pad3(n)+"/"+tb), imgFile}))
     .concat((SET.promos||[]).map(([n,nome,tipo,origem,imgFile])=>({n:1000+n, pn:n, promo:true, nome, r:"PROMO", tipo, cat:"Pokémon", preco:null, origem, imgFile, num:"PROMO "+pad3(n)})));
@@ -596,6 +610,10 @@ function exemploDe(k){ const ex=(EXEMPLOS[setId]||{})[k]; const c= ex? CARDS.fin
 
 /* ===================== histórico de preços ===================== */
 function serie(n){ const c=H&&H.cartas[pad3(n)]; return c? Object.entries(c.serie) : []; }
+const DC_NOTA="Deck Certo: estimativa automática (agregador). Medido em set e nov/2026: ~13% abaixo do piso da Liga nos hits, igual nas comuns. Para negociar, use a Liga.";
+function dcInfo(n){ const c=HD&&HD.cartas&&HD.cartas[pad3(n)]; if(!c) return null; const ds=Object.keys(c.serie).sort(); if(!ds.length) return null; const d=ds[ds.length-1]; let tr=null; if(ds.length>1){ const prev=c.serie[ds[ds.length-2]]; if(prev) tr=(c.serie[d]-prev)/prev*100; } return {d, v:c.serie[d], s:Object.entries(c.serie).sort(), tr}; }
+function dcTrend(tr){ return (tr!=null&&Math.abs(tr)>=0.5)? ` <span class="${tr>0?"up":"dn"}">${tr>0?"▲":"▼"} ${Math.abs(tr).toLocaleString("pt-BR",{maximumFractionDigits:0})}%</span>` : ""; }
+function dcLine(s){ const i=(s.v==="N"||s.v==="H")?dcInfo(s.n):null; if(!i) return ""; return `<br><span class="dt dc" title="${DC_NOTA}">Deck Certo <b>${brl(i.v)}</b> · ${fmtD(i.d)} · estimativa</span>`; }
 function precoEm(n,dt){ const s=serie(n); if(!s.length) return null; let v=s[0][1]; for(const [d,p] of s){ if(d<=dt) v=p; else break; } return v; }
 function variacao(n,dias){ const s=serie(n); if(s.length<2) return null; const [dl,pl]=s[s.length-1]; const ant= dias==null? s[0][1] : precoEm(n,addDays(dl,-dias)); if(!ant) return null; return {de:ant,para:pl,pct:(pl-ant)/ant*100,abs:pl-ant}; }
 function totalSerie(keys){ return allDates.map(d=>[d, keys.reduce((a,n)=>a+(precoEm(n,d)||0),0)]); }
@@ -672,7 +690,8 @@ function priceLine(s){
   const hc = H && H.cartas[pad3(s.n)];
   if(hc){ const ds=Object.keys(hc.serie).sort(); const d=ds[ds.length-1]; const mn=hc.serie[d]; const mx=hc.max&&hc.max[d];
     let tr=""; if(ds.length>1){ const prev=hc.serie[ds[ds.length-2]]; if(prev){ const pc=(mn-prev)/prev*100; if(Math.abs(pc)>=0.5) tr=` <span class="${pc>0?"up":"dn"}">${pc>0?"▲":"▼"} ${Math.abs(pc).toLocaleString("pt-BR",{maximumFractionDigits:0})}%</span>`; } }
-    return `<div class="pr">Menor <b>${brl(mn)}</b>${mx!=null?` · Maior ${brl(mx)}`:""}${tr}<br><span class="dt">Liga · ${fmtD(d)}</span></div>`; }
+    return `<div class="pr">Menor <b>${brl(mn)}</b>${mx!=null?` · Maior ${brl(mx)}`:""}${tr}<br><span class="dt">Liga · ${fmtD(d)}</span>${dcLine(s)}</div>`; }
+  { const i=dcInfo(s.n); if(i) return `<div class="pr">Deck Certo <b>${brl(i.v)}</b>${dcTrend(i.tr)}<br><span class="dt dc" title="${DC_NOTA}">estimativa · ${fmtD(i.d)} · sem leitura da Liga</span></div>`; }
   if(s.preco!=null) return `<div class="pr">Ref. <b>${brl(s.preco)}</b><br><span class="dt">${SET.precosFonte||"Deck Certo"} · ${SET.precosAtualizadosEm}</span></div>`;
   return `<div class="pr"><span class="dt">sem preço de referência</span></div>`;
 }
@@ -823,16 +842,67 @@ function openPrecos(){
 $("#btnPrecos").onclick=openPrecos;
 $("#btnSalvar").onclick=salvarAgora;
 $("#btnAtualizar").onclick=atualizarPrecos;
+const LIGA_EDID={CRI:773,PRE:649,MEG:730,"30C":804};   // DEL (Reinado Delta): configure colando a URL da edição da Liga no painel Atualizar preços
+const LIGA_SIGLA={};   // sigla que a Liga usa quando difere do id do set (preenchida pelo painel)
+try{ const o=JSON.parse(localStorage.getItem("ligaEdid")||"{}"); for(const k in o){ if(o[k]&&o[k].edid){ LIGA_EDID[k]=+o[k].edid; if(o[k].sigla) LIGA_SIGLA[k]=o[k].sigla; } } }catch(e){}
+function salvarLigaEdid(id,edid,sigla){ let o={}; try{ o=JSON.parse(localStorage.getItem("ligaEdid")||"{}"); }catch(e){} o[id]={edid:+edid,sigla:(sigla||"").toUpperCase()}; localStorage.setItem("ligaEdid",JSON.stringify(o)); LIGA_EDID[id]=+edid; if(sigla) LIGA_SIGLA[id]=sigla.toUpperCase(); }
+let precosPoll=null;
 async function atualizarPrecos(){
-  const head=`<div class="head"><h2>Atualizar preços · ${SET.nome}<small>Fonte: LigaPokémon (abre o site em segundo plano no seu Chrome) · acrescenta o ponto de hoje ao histórico</small></h2><button class="x" aria-label="Fechar">×</button></div>`;
-  const show=html=>{ $("#panel").innerHTML=head+`<div class="pan">${html}</div>`; $("#panel .x").onclick=closePanel; $("#panel").classList.add("open"); $("#veil").classList.add("open"); };
-  if(!SERVER){ show(`<p>Os preços são coletados no <b>notebook</b> (o Chrome de lá lê a LigaPokémon) e publicados para cá.</p><p>No notebook: abra pelo <b>Abrir Fichario.cmd</b> e use este botão, ou dê dois cliques em <b>Atualizar precos.cmd</b>. Em ~1 minuto, toque em <b>Atualizar app</b> aqui.</p>`); return; }
-  show(`<p>Baixando os preços de hoje de ${SET.nome}… leva uns 20–30 segundos.</p>`);
-  try{
-    const r=await fetch("/api/atualizar-precos?set="+setId,{method:"POST"}); const j=await r.json();
-    if(j.ok){ show(`<p style="color:#1f6b3f;font-weight:800">Histórico atualizado.</p><pre style="white-space:pre-wrap;font-size:12px;background:var(--paper);padding:10px;border-radius:8px">${(j.saida||"").replace(/</g,"&lt;")}</pre><div class="actions"><button id="rl">Recarregar o fichário com os preços novos</button></div>`); $("#rl").onclick=()=>location.reload(); }
-    else show(`<p style="color:#8b1f1f;font-weight:800">Não deu certo.</p><pre style="white-space:pre-wrap;font-size:12px">${(j.saida||j.erro||"").replace(/</g,"&lt;")}</pre>`);
-  }catch(e){ show(`<p style="color:#8b1f1f">Erro: ${e.message}</p>`); }
+  const head=`<div class="head"><h2>Atualizar preços · ${SET.nome}<small>Fonte: LigaPokémon · você abre a página no Chrome e o favorito "Enviar preços ao fichário" grava aqui</small></h2><button class="x" aria-label="Fechar">×</button></div>`;
+  const show=html=>{ $("#panel").innerHTML=head+`<div class="pan">${html}</div>`; $("#panel .x").onclick=()=>{ clearInterval(precosPoll); closePanel(); }; $("#panel").classList.add("open"); $("#veil").classList.add("open"); };
+  const edid=LIGA_EDID[setId];
+  if(!edid){
+    show(`<div class="dcbox" style="margin:0 0 12px"><b>Deck Certo · automático · estimativa</b> — última leitura: <b>${HD&&HD.atualizadoEm?fmtD(HD.atualizadoEm):"nunca"}</b>.${SERVER?' <button id="dcNow" type="button">Atualizar Deck Certo agora</button><div id="dcOut" style="font-size:12px;margin-top:4px"></div>':''}</div>
+      <p style="margin:0 0 8px"><b>A edição ${SET.nome} ainda não está configurada na LigaPokémon.</b> Só precisa fazer uma vez:</p>
+      <ol style="margin:0 0 10px;padding-left:20px;line-height:1.5">
+        <li><a href="https://www.ligapokemon.com.br/?view=cards/edicoes" target="_blank" rel="noopener"><b>Abrir a lista de edições da Liga ↗</b></a> e clicar em <b>${SET.nome}</b>.</li>
+        <li>Copiar o endereço da página (tem <code>edid=…</code>) e colar aqui:</li>
+      </ol>
+      <input id="ligaUrlIn" type="text" style="width:100%;box-sizing:border-box;font-size:13px" placeholder="https://www.ligapokemon.com.br/?view=cards/search&card=edid=NNN ed=XXX">
+      <div class="actions" style="margin-top:8px"><button id="ligaUrlOk">Salvar edição da Liga</button></div>
+      <div id="ligaUrlMsg" style="font-size:12px;color:var(--ink-soft);margin-top:6px">Fica salvo neste navegador. Se preferir, mande o link ao Claude para ele fixar no app.</div>`);
+    { const b=$("#dcNow"); if(b) b.onclick=async()=>{ b.disabled=true; $("#dcOut").textContent="Lendo o Deck Certo…"; try{ const r=await fetch("/api/atualizar-deckcerto?set="+setId,{method:"POST"}); const j=await r.json(); $("#dcOut").textContent=(j.saida||"").trim().split("\n").filter(Boolean).slice(-2).join(" · ")||(j.ok?"Atualizado.":"Falhou."); if(j.ok) toast("Deck Certo atualizado — toque em Atualizar app para ver"); }catch(e){ $("#dcOut").textContent="Erro: "+e.message; } b.disabled=false; }; }
+    $("#ligaUrlOk").onclick=()=>{ const u=decodeURIComponent($("#ligaUrlIn").value||""); const m=/edid=(\d+)/.exec(u); const ms=/\bed=([A-Za-z0-9]{2,4})/.exec(u);
+      if(!m){ $("#ligaUrlMsg").textContent="Não achei edid= nesse endereço. Abra a edição na Liga e copie o endereço da barra do navegador."; $("#ligaUrlMsg").style.color="#8b1f1f"; return; }
+      salvarLigaEdid(setId,m[1],ms?ms[1]:""); toast("Edição da Liga salva para "+SET.nome); atualizarPrecos(); };
+    return; }
+  if(!SERVER){ show(`<div class="dcbox" style="margin:0 0 12px"><b>Deck Certo · automático · estimativa</b> — última leitura publicada: <b>${HD&&HD.atualizadoEm?fmtD(HD.atualizadoEm):"nunca"}</b></div><p>Os preços são coletados no <b>notebook</b> e publicados para cá.</p><p>No notebook: abra pelo <b>Abrir Fichario.cmd</b>, clique em <b>Atualizar preços</b> e siga os passos. Depois toque em <b>Atualizar app</b> aqui.</p>`); return; }
+  const ligaUrl="https://www.ligapokemon.com.br/?view=cards/search&card="+encodeURIComponent("edid="+edid+" ed="+(LIGA_SIGLA[setId]||setId));
+  const bmCode=`(function(){var set,m=decodeURIComponent(location.href).match(/\\bed=([A-Za-z0-9]{3})/);var txt=null,n=0;if(typeof cardsjson!=='undefined'&&Array.isArray(cardsjson)){txt=JSON.stringify(cardsjson);n=cardsjson.length;}else{var sc=document.scripts;for(var i=0;i<sc.length&&!txt;i++){var mm=/var\\s+cardsjson\\s*=\\s*(\\[[\\s\\S]*?\\]);/.exec(sc[i].textContent||'');if(mm){txt=mm[1];}}if(!txt){var mh=/var\\s+cardsjson\\s*=\\s*(\\[[\\s\\S]*?\\]);/.exec(document.documentElement.outerHTML);if(mh)txt=mh[1];}if(txt){try{n=JSON.parse(txt).length;}catch(e){alert('Achei a lista mas nao consegui ler: '+e.message);return;}}}if(!txt){alert('Nao achei a lista de cartas nesta pagina (a Liga pode ter mudado o formato). Avise o Claude.');return;}set=m?m[1].toUpperCase():prompt('Qual set? CRI, PRE, MEG, 30C ou DEL');if(!set)return;set=set.toUpperCase();var known={CRI:1,PRE:1,MEG:1,'30C':1,DEL:1};if(!known[set]){set=prompt('A Liga chama esta edicao de '+set+'. Qual aba do fichario? CRI, PRE, MEG, 30C ou DEL','DEL');if(!set)return;set=set.toUpperCase();}fetch('http://localhost:8765/api/importar-precos?set='+set,{method:'POST',headers:{'Content-Type':'text/plain'},body:txt}).then(function(r){return r.json()}).then(function(j){if(j.ok){alert('Fichario atualizado: '+set+' ('+n+' cartas).\\n\\n'+String(j.saida||'').slice(0,1500));}else{alert('Nao deu certo: '+(j.erro||j.saida||''));}}).catch(function(e){navigator.clipboard.writeText(txt).then(function(){alert('O fichario nao respondeu (ele precisa estar aberto pelo Abrir Fichario.cmd). Os precos foram COPIADOS: volte ao fichario, abra Atualizar precos e cole no campo do fim.');},function(){alert('O fichario nao respondeu e nao consegui copiar: '+e.message);});});})();`;
+  const bm="javascript:"+encodeURIComponent(bmCode);
+  const H=window["HISTORICO_"+setId]; const iso=H&&H.atualizadoEm?H.atualizadoEm:""; const ult=iso?iso.split("-").reverse().join("/"):"—";
+  const hoje=new Date().toISOString().slice(0,10);
+  show(`
+    <div class="dcbox" style="margin:0 0 12px"><b>Deck Certo · automático · estimativa</b> — última leitura: <b>${HD&&HD.atualizadoEm?fmtD(HD.atualizadoEm):"nunca"}</b>. Atualiza sozinho ao abrir o fichário pelo notebook e pela tarefa diária do Windows (<i>Agendar Deck Certo diario.cmd</i>, uma vez). <button id="dcNow" type="button">Atualizar Deck Certo agora</button><div id="dcOut" style="font-size:12px;margin-top:4px"></div><div class="dcnote">Costuma ficar ~13% abaixo do piso da Liga nos hits. A referência de negociação continua sendo a Liga, abaixo.</div></div>
+    <p style="margin:0 0 8px">Desde out/2026 a LigaPokémon bloqueia a leitura automática; o fichário passou a receber os preços da página que <b>você</b> abre no Chrome. Leva uns 30 segundos por set.</p>
+    <p style="margin:0 0 10px"><b>Última coleta deste set:</b> ${ult}${iso===hoje?" (hoje)":""}</p>
+    <ol style="margin:0 0 10px;padding-left:20px;line-height:1.5">
+      <li><b>Só na primeira vez</b> (ou quando o fichário pedir para trocar — <b>favorito atualizado em 07/11/2026 para o Reinado Delta: arraste de novo</b>): arraste este botão para a barra de favoritos do Chrome → <a href="${bm}" draggable="true" onclick="return false" style="display:inline-block;padding:6px 10px;border:1px solid var(--ink-soft);border-radius:8px;background:var(--paper);font-weight:800;text-decoration:none;cursor:grab">📥 Enviar preços ao fichário</a> <small>(se a barra não aparece: Ctrl+Shift+B)</small></li>
+      <li><a href="${ligaUrl}" target="_blank" rel="noopener"><b>Abrir ${SET.nome} na LigaPokémon ↗</b></a> — espere a lista de cartas carregar.</li>
+      <li>Na página da Liga, clique no favorito <b>Enviar preços ao fichário</b>. Ele grava aqui e mostra o resumo. Repita para os outros sets (troque de aba no fichário e abra este painel de novo).</li>
+    </ol>
+    <div id="pstat" style="padding:8px 10px;border-radius:8px;background:var(--paper);font-size:13px">Aguardando o envio de ${SET.nome}…</div>
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px">Se o envio direto não funcionar: colar aqui</summary>
+      <textarea id="pcola" rows="4" style="width:100%;box-sizing:border-box;margin-top:6px;font-size:12px" placeholder="Cole aqui o texto que o favorito copiou"></textarea>
+      <div class="actions"><button id="pgravar">Gravar preços de ${SET.nome}</button></div></details>
+    <div class="actions" style="margin-top:10px"><button id="ppub" title="Envia os históricos novos para o site, para o iPhone ver">Publicar para o iPhone</button><button id="rl">Recarregar o fichário com os preços novos</button></div>
+    <pre id="psaida" style="display:none;white-space:pre-wrap;font-size:12px;background:var(--paper);padding:10px;border-radius:8px;margin-top:10px"></pre>`);
+  $("#rl").onclick=()=>location.reload();
+  { const b=$("#dcNow"); if(b) b.onclick=async()=>{ b.disabled=true; $("#dcOut").textContent="Lendo o Deck Certo…"; try{ const r=await fetch("/api/atualizar-deckcerto?set="+setId,{method:"POST"}); const j=await r.json(); $("#dcOut").textContent=(j.saida||"").trim().split("\n").filter(Boolean).slice(-2).join(" · ")||(j.ok?"Atualizado.":"Falhou."); if(j.ok) toast("Deck Certo atualizado — toque em Atualizar app para ver"); }catch(e){ $("#dcOut").textContent="Erro: "+e.message; } b.disabled=false; }; }
+  const saida=(t,erro)=>{ const e=$("#psaida"); e.style.display="block"; e.style.color=erro?"#8b1f1f":""; e.textContent=t; };
+  $("#pgravar").onclick=async()=>{ const t=$("#pcola").value.trim(); if(!t){ saida("Cole o texto primeiro.",true); return; } $("#pgravar").disabled=true; saida("Gravando…");
+    try{ const r=await fetch("/api/importar-precos?set="+setId,{method:"POST",headers:{"Content-Type":"text/plain"},body:t}); const j=await r.json(); saida(j.ok?("Histórico de "+setId+" atualizado.\n"+(j.saida||"")):("Não deu certo: "+(j.erro||j.saida||"")),!j.ok); }
+    catch(e){ saida("Erro: "+e.message,true); } $("#pgravar").disabled=false; };
+  $("#ppub").onclick=async()=>{ $("#ppub").disabled=true; saida("Publicando no GitHub Pages…");
+    try{ const r=await fetch("/api/publicar",{method:"POST"}); const j=await r.json(); saida(j.saida||(j.ok?"Publicado.":"Falhou."),!j.ok); }
+    catch(e){ saida("Erro: "+e.message,true); } $("#ppub").disabled=false; };
+  clearInterval(precosPoll);
+  precosPoll=setInterval(async()=>{ const el=$("#pstat"); if(!el){ clearInterval(precosPoll); return; }
+    try{ const r=await fetch("/api/precos-status",{cache:"no-store"}); const j=await r.json(); const me=j[setId];
+      if(me&&me.atualizadoEm===hoje&&iso!==hoje){ el.style.background="#e3f3e8"; el.innerHTML=`<b style="color:#1f6b3f">Recebido hoje:</b> ${SET.nome}, ${me.cartas} cartas no histórico. Clique em <b>Recarregar</b> para ver os preços novos.`; }
+      const outros=Object.keys(LIGA_EDID).filter(k=>k!==setId).map(k=>k+" "+(j[k]&&j[k].atualizadoEm?j[k].atualizadoEm.split("-").reverse().join("/"):"—")).join(" · ");
+      let o=$("#poutros"); if(!o){ o=document.createElement("div"); o.id="poutros"; o.style.cssText="font-size:12px;color:var(--ink-soft);margin-top:6px"; el.after(o); } o.textContent="Outros sets (última coleta): "+outros;
+    }catch(e){} },3000);
 }
 document.addEventListener("click",e=>{ if(e.target.id==="openPrecos") openPrecos(); });
 
@@ -861,11 +931,12 @@ function openPanel(s){
   $("#panel").innerHTML=`
     <div class="head"><h2>${c.nome}<small>${c.num} · ${SET.nome}${c.cat?" · "+c.cat:""}${c.tipo?" · "+c.tipo:""} ${(SET.id==="30C"&&c.r==="PK"&&c.n>=23&&c.n<=52)?" · ★ Pikachu "+String(c.n-22).padStart(2,"0")+"/30":""}</small></h2><button class="x" aria-label="Fechar">×</button></div>
     <div class="body">
-      <div><img alt="${c.nome}" src="${imgLocal(c)}" data-remote="${imgRemote(c)}"><div class="links"><a class="lk" target="_blank" rel="noopener" href="${cartinhaUrl(c)}">Ver no cartinha.gg</a><a class="lk" target="_blank" rel="noopener" href="${ligaUrl(c)}">Buscar no LigaPokémon</a><button type="button" class="lk lk-print" onclick="imprimirPlaceholder()">🖨️ Imprimir (placeholder do cofre)</button></div></div>
+      <div><img alt="${c.nome}" src="${imgLocal(c)}" data-remote="${imgRemote(c)}"><div class="links"><a class="lk lk-liga" target="_blank" rel="noopener" href="${ligaUrl(c)}" title="Referência de negociação">Ver na LigaPokémon ↗</a><a class="lk" target="_blank" rel="noopener" href="${cartinhaUrl(c)}">Ver no cartinha.gg</a><button type="button" class="lk lk-print" onclick="imprimirPlaceholder()">🖨️ Imprimir (placeholder do cofre)</button></div></div>
       <div class="facts">
-        <div class="price">${c.promo?"sem preço de referência":brl(c.preco)} <small>${c.promo?"promo · fora da fonte de preços":"menor preço na Liga · "+SET.precosAtualizadosEm}</small></div>
+        <div class="price">${c.promo?"sem preço de referência":brl(c.preco)} <small>${c.promo?"promo · fora da fonte de preços":(H?"menor preço na Liga · ":(SET.precosFonte||"preço de referência")+" · ")+SET.precosAtualizadosEm}</small></div>
         ${(()=>{ const hc=H&&H.cartas[pad3(c.n)]; if(!hc||!hc.med) return ""; const ds=Object.keys(hc.med); if(!ds.length) return ""; const d=ds[ds.length-1];
           return `<div style="font-size:13px;color:var(--ink-soft);margin-top:-4px">LigaPokémon em ${fmtD(d)}: <b>menor ${brl(hc.serie[d])}</b> · médio ${brl(hc.med[d])} · maior ${brl(hc.max[d])}</div>`; })()}
+        ${(()=>{ const i=c.promo?null:dcInfo(c.n); if(!i) return ""; return `<div class="dcbox"><b>Deck Certo</b> em ${fmtD(i.d)}: <b>${brl(i.v)}</b>${dcTrend(i.tr)}<div class="dcnote">Estimativa automática (agregador) — costuma ficar ~13% abaixo do piso da Liga nos hits. Para negociar, vale a Liga: <a href="${ligaUrl(c)}" target="_blank" rel="noopener"><b>abrir na Liga ↗</b></a></div>${i.s.length>1?lineChart(i.s,{h:90,w:320,cls:"lnDC",fill:false}):""}</div>`; })()}
         ${(()=>{ const s=serie(c.n); if(s.length<2) return ""; const v15=variacao(c.n,15), v30=variacao(c.n,30), vAll=variacao(c.n,null);
           const mx=Math.max(...s.map(p=>p[1])), mn=Math.min(...s.map(p=>p[1]));
           return `${lineChart(s,{h:110,w:320})}<div class="card-var">${v15?`<span>15 dias <b class="${v15.pct>=0?"up":"dn"}">${pctTxt(v15.pct)}</b></span>`:""}${v30?`<span>30 dias <b class="${v30.pct>=0?"up":"dn"}">${pctTxt(v30.pct)}</b></span>`:""}${vAll?`<span>Desde ${fmtD(s[0][0])} <b class="${vAll.pct>=0?"up":"dn"}">${pctTxt(vAll.pct)}</b></span>`:""}</div><div style="font-size:12px;color:var(--ink-soft)">Mín. ${brl(mn)} · Máx. ${brl(mx)} no período</div>`; })()}
@@ -984,7 +1055,7 @@ function imprimirPlaceholder(){
 }
 
 /* ===================== sincronização GitHub ===================== */
-const APP_VERSION="2026-10-20a";
+const APP_VERSION="2026-11-07a";
 const GH_KEY="fichario_gh", GH_LAST="fichario_gh_last";
 let gh=(()=>{ try{ return JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch{ return null; } })() || {token:"", repo:"helioms26/fichario-dados", file:"colecao.json"};
 let ghSha=null, ghStatus=(gh.token?"idle":"off"), ghErro="", ghBusy=false, ghTimer=null; window.dirtyGh=false; let ghLastSync=+localStorage.getItem(GH_LAST)||0;
@@ -1022,7 +1093,8 @@ async function ghPush(){
   finally{ ghBusy=false; if(window.dirtyGh && ghStatus!=="offline") setTimeout(ghPush,3000); }
 }
 function tempoAtras(ms){ if(!ms) return "nunca"; const m=Math.round((Date.now()-ms)/60000); if(m<1) return "agora"; if(m<60) return `há ${m} min`; const h=Math.round(m/60); if(h<24) return `há ${h} h`; const dd=Math.round(h/24); return `há ${dd} dia${dd>1?"s":""}`; }
-function precosInfo(){ if(!H||!H.atualizadoEm) return `<span class="warn">Preços: sem histórico</span>`; const d=H.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=14?"bad":(dias>=7?"warn":"ok"); return `Preços: <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"há 1 dia":"há "+dias+" dias"})</span>`; }
+function precosInfo(){ const dc=(()=>{ if(!HD||!HD.atualizadoEm) return ""; const d=HD.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=7?"bad":(dias>=3?"warn":"ok"); return ` <span class="sep">·</span> <span class="dc" title="${DC_NOTA}">Deck Certo <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"ontem":"há "+dias+" dias"})</span></span>`; })();
+  if(!H||!H.atualizadoEm) return `<span class="warn">Liga: sem histórico</span>${dc}`; const d=H.atualizadoEm; const dias=Math.floor((Date.now()-new Date(d+"T12:00:00"))/86400000); const cls= dias>=14?"bad":(dias>=7?"warn":"ok"); return `Liga: <b>${fmtD(d)}</b> <span class="${cls}">(${dias===0?"hoje":dias===1?"há 1 dia":"há "+dias+" dias"})</span>${dc}`; }
 function syncUI(){ const el=document.getElementById("syncbar"); if(!el) return;
   let ghTxt; if(!gh.token) ghTxt=`GitHub: <span class="warn">não configurado</span> <button id="ghCfg">Configurar sincronização</button><span class="mbar"> <button id="mResumoBar" title="Progresso, valor e faltantes">Resumo</button></span>`;
   else { const st={ok:`<span class="ok">● sincronizado ${tempoAtras(ghLastSync)}</span>`, idle:`<span class="warn">○ aguardando sincronização</span>`, sync:`<span class="warn">↻ sincronizando…</span>`, offline:`<span class="bad">● sem conexão</span> — alterações guardadas aqui; sobem quando voltar o sinal`, erro:`<span class="bad">● erro: ${ghErro||"?"}</span>`, conflito:`<span class="bad">● conflito</span>`}[ghStatus]||ghStatus;
